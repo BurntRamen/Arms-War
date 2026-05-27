@@ -1,0 +1,18 @@
+{
+  "name": "Arms War",
+  "short_name": "Arms War",
+  "description": "An online dice-driven card battle game with factions, gold, technologies, and Waygate victories.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#10233b",
+  "theme_color": "#174c7c",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

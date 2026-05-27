@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Arms War icon</title>
+  <desc id="desc">A shield with crossed cards and a Waygate diamond.</desc>
+  <rect width="512" height="512" rx="96" fill="#10233b"/>
+  <path d="M256 54 398 112v116c0 92-56 171-142 230-86-59-142-138-142-230V112L256 54Z" fill="#174c7c"/>
+  <path d="M164 154h116c18 0 32 14 32 32v176H196c-18 0-32-14-32-32V154Z" fill="#f8fafc"/>
+  <path d="M232 122h116c18 0 32 14 32 32v176H264c-18 0-32-14-32-32V122Z" fill="#f6c85f"/>
+  <path d="M256 181 313 238 256 295 199 238 256 181Z" fill="#9f2d3f"/>
+  <path d="M256 210 284 238 256 266 228 238 256 210Z" fill="#f8fafc"/>
+  <path d="M164 154h116c18 0 32 14 32 32v176M232 122h116c18 0 32 14 32 32v176" fill="none" stroke="#10233b" stroke-width="14" stroke-linejoin="round"/>
+</svg>
