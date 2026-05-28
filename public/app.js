@@ -19,7 +19,7 @@ const state = {
   friendName: "",
   messageTo: "",
   messageText: "",
-  musicEnabled: localStorage.getItem("armswar_music_enabled") === "true",
+  musicEnabled: localStorage.getItem("armswar_music_enabled") !== "false",
   showOpponentAbilities: false
 };
 
@@ -119,7 +119,7 @@ function menuStartSteps() {
 }
 
 function musicButton() {
-  return `<button class="secondary music-button" data-action="toggle-music">${state.musicEnabled ? "Music On" : "Music Off"}</button>`;
+  return `<button class="secondary music-button" data-action="toggle-music">${state.musicEnabled ? "Turn Music Off" : "Turn Music On"}</button>`;
 }
 
 function factionThemeId() {
@@ -211,6 +211,10 @@ function scheduleMusicBar() {
 function startMusic() {
   ensureAudio();
   stopMusic();
+  if (masterGain) {
+    masterGain.gain.cancelScheduledValues(audioContext.currentTime);
+    masterGain.gain.setValueAtTime(0.38, audioContext.currentTime);
+  }
   scheduleMusicBar();
   musicTimer = setInterval(scheduleMusicBar, 3200);
 }
@@ -218,6 +222,10 @@ function startMusic() {
 function stopMusic() {
   if (musicTimer) clearInterval(musicTimer);
   musicTimer = null;
+  if (audioContext && masterGain) {
+    masterGain.gain.cancelScheduledValues(audioContext.currentTime);
+    masterGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+  }
 }
 
 function setMusicEnabled(enabled) {
@@ -960,15 +968,13 @@ if (state.roomCode && state.token) {
   socialApi("/api/social").catch(() => render());
 }
 
-if (state.musicEnabled) {
-  window.addEventListener(
-    "pointerdown",
-    () => {
-      if (state.musicEnabled && !musicTimer) startMusic();
-    },
-    { once: true }
-  );
-}
+window.addEventListener(
+  "pointerdown",
+  () => {
+    if (state.musicEnabled && !musicTimer) startMusic();
+  },
+  { once: true }
+);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
