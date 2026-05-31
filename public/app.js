@@ -660,8 +660,7 @@ function controls() {
         <strong>Pick your faction here, then press Start Game.</strong>
       </div>
       <p>${waiting ? waitingText : "Choose a faction, then press Start Game. All joined players must start."}</p>
-      <div class="faction-grid">${room.factions.map((faction) => factionCard(faction, me.factionId === faction.id)).join("")}</div>
-      <button data-action="start" ${me.readyToStart ? "disabled" : ""}>${me.readyToStart ? "Waiting..." : "Start Game"}</button>`;
+      <div class="faction-grid">${room.factions.map((faction) => factionCard(faction, me.factionId === faction.id)).join("")}</div>`;
   }
   if (["fightBet", "fightPlace", "fightAbility", "fightResults"].includes(room.phase)) {
     const resultSummary = room.phase === "fightResults" ? fightResultsSummary(room) : "";
@@ -809,6 +808,7 @@ function fightBoard() {
 }
 
 function lobbySetupArea(room) {
+  const me = room.players[room.you];
   return `<section class="lobby-setup-grid">
     <section class="panel lobby-guide-panel">
       <span class="eyebrow">Table Setup</span>
@@ -822,21 +822,51 @@ function lobbySetupArea(room) {
       <h3>Lobby Log</h3>
       <div class="log compact-log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
     </section>
-    <aside class="panel action-panel lobby-action-panel">
+    <aside class="panel lobby-action-panel">
       <h2>Choose Faction</h2>
       ${controls()}
+      <div class="lobby-ready-bar">
+        <div>
+          <span>Your Status</span>
+          <strong>${me?.readyToStart ? "Ready" : me?.faction ? "Faction chosen" : "Choose a faction"}</strong>
+        </div>
+        <button data-action="start" ${me?.readyToStart ? "disabled" : ""}>${me?.readyToStart ? "Waiting..." : "Start Game"}</button>
+      </div>
     </aside>
   </section>`;
+}
+
+function lobbyScreen() {
+  const room = state.room;
+  return `<div class="page lobby-page theme-${factionThemeId()}"><main class="shell lobby-shell">
+    ${state.toast ? `<div class="toast" data-action="dismiss-toast">${state.toast.text}</div>` : ""}
+    <section class="lobby-header">
+      <div>
+        <span class="eyebrow">Table Lobby</span>
+        <h1 class="brand">Arms War</h1>
+        <p class="subtitle">Invite players, choose factions, and ready up. The battle table appears after the game starts.</p>
+      </div>
+      <div class="topbar-actions">
+        ${musicButton()}
+        <button class="secondary" data-action="toggle-opponent-abilities">${state.showOpponentAbilities ? "Hide" : "Show"} Opponent Abilities</button>
+        <button class="secondary" data-action="leave">Leave</button>
+      </div>
+    </section>
+    ${state.error ? `<div class="error">${state.error}</div>` : ""}
+    ${lobbyInvitePanel(room)}
+    ${lobbySeatCards(room)}
+    ${opponentAbilitiesPanel(room)}
+    ${lobbySetupArea(room)}
+  </main></div>`;
 }
 
 function game() {
   const room = state.room;
   const activePlayer = room.players[room.activePlayer];
-  const lobbyExtras = room.phase === "lobby" ? `${lobbyInvitePanel(room)}${lobbySeatCards(room)}` : "";
   const turnSpotlight = room.phase !== "lobby" && activePlayer ? `<section class="turn-spotlight">
     <span>Current Turn</span><strong>Player ${activePlayer.seat}: ${activePlayer.name}</strong>
   </section>` : "";
-  const playArea = room.phase === "lobby" ? lobbySetupArea(room) : `<section class="game-grid">
+  const playArea = `<section class="game-grid">
       <div class="panel table-panel">
         <h2>Table</h2>
         <p class="table-message">${room.message}</p>
@@ -873,7 +903,6 @@ function game() {
       <div class="pill"><span>Multiplayer</span><strong>${state.streamConnected ? "Live" : "Syncing"}</strong></div>
     </section>
     ${turnSpotlight}
-    ${lobbyExtras}
     ${opponentAbilitiesPanel(room)}
     <section class="players game-players">${seatNumbers(room).map((seat) => playerPanel(room.players[seat])).join("")}</section>
     ${playArea}
@@ -881,7 +910,7 @@ function game() {
 }
 
 function render() {
-  app.innerHTML = state.room ? game() : menu();
+  app.innerHTML = state.room ? (state.room.phase === "lobby" ? lobbyScreen() : game()) : menu();
 }
 
 let selectedFightCardId = "";

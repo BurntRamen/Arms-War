@@ -75,6 +75,20 @@ select {
   padding: 12px;
 }
 
+.lobby-page {
+  --theme-bg-a: #edf1f6;
+  --theme-bg-b: #d8e0e8;
+  --theme-accent: #174c7c;
+  --theme-accent-2: #197278;
+  min-height: 100vh;
+  overflow: auto;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 72%, white), color-mix(in srgb, var(--theme-bg-b) 84%, #f8fafc)),
+    linear-gradient(90deg, rgba(23, 76, 124, 0.09) 0 1px, transparent 1px 96px),
+    linear-gradient(0deg, rgba(23, 76, 124, 0.07) 0 1px, transparent 1px 72px);
+  padding: 18px;
+}
+
 .theme-rumin {
   --theme-bg-a: #f1d7b4;
   --theme-bg-b: #c9894b;
@@ -123,6 +137,12 @@ select {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.lobby-shell {
+  max-width: 1280px;
+  display: grid;
+  gap: 12px;
 }
 
 .menu-shell {
@@ -564,9 +584,24 @@ select {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
   gap: 10px;
-  align-items: stretch;
+  align-items: start;
   min-height: 0;
-  flex: 1;
+}
+
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 28%, #ccd5df);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 16px;
+  box-shadow: 0 16px 38px rgba(16, 35, 59, 0.13);
+}
+
+.lobby-header .brand {
+  color: var(--theme-accent);
 }
 
 .card,
@@ -665,8 +700,13 @@ select {
 }
 
 .lobby-action-panel {
+  position: sticky;
+  top: 12px;
   border-color: #f6c85f;
   box-shadow: 0 0 0 2px rgba(246, 200, 95, 0.16);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding-bottom: 0;
 }
 
 .setup-checklist {
@@ -697,6 +737,54 @@ select {
 
 .compact-log {
   max-height: 150px;
+}
+
+.lobby-ready-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid #d8e0e8;
+  background: rgba(248, 250, 252, 0.96);
+  margin: 12px -10px 0;
+  padding: 10px;
+}
+
+.lobby-ready-bar span {
+  display: block;
+  color: #63758a;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.lobby-ready-bar strong {
+  color: var(--theme-accent);
+}
+
+.lobby-ready-bar button {
+  min-width: 132px;
+}
+
+.lobby-page .faction-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.lobby-page .faction-card {
+  max-height: none;
+}
+
+.lobby-page .faction-art-row img {
+  aspect-ratio: 1.2;
+}
+
+.lobby-page .faction-card p {
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .table-message {
@@ -1316,6 +1404,7 @@ select {
   }
 
   .topbar,
+  .lobby-header,
   .grid,
   .menu-grid,
   .menu-strip,
@@ -1334,6 +1423,11 @@ select {
   .turn-spotlight {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .lobby-action-panel {
+    position: static;
+    max-height: none;
   }
 
   .lobby-seats,
@@ -1356,6 +1450,11 @@ select {
 
   .faction-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lobby-ready-bar {
+    position: sticky;
+    bottom: 0;
   }
 }
 
