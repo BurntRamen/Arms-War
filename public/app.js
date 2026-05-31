@@ -58,6 +58,59 @@ const MENU_FACTIONS = [
   }
 ];
 
+const MUSIC_THEMES = {
+  neutral: {
+    scale: [196, 220, 247, 294, 330, 392, 440, 494],
+    bass: [98, 98, 130.81, 146.83],
+    leadType: "triangle",
+    accentType: "sine",
+    bassType: "sawtooth",
+    leadVolume: 0.14,
+    bassVolume: 0.06,
+    stride: 2
+  },
+  rumin: {
+    scale: [174.61, 196, 220, 261.63, 293.66, 349.23, 392, 440],
+    bass: [87.31, 98, 130.81, 146.83],
+    leadType: "sawtooth",
+    accentType: "triangle",
+    bassType: "sawtooth",
+    leadVolume: 0.13,
+    bassVolume: 0.08,
+    stride: 1
+  },
+  sheen: {
+    scale: [196, 233.08, 261.63, 311.13, 349.23, 392, 466.16, 523.25],
+    bass: [98, 116.54, 155.56, 174.61],
+    leadType: "sine",
+    accentType: "triangle",
+    bassType: "triangle",
+    leadVolume: 0.12,
+    bassVolume: 0.045,
+    stride: 3
+  },
+  frumo: {
+    scale: [164.81, 196, 220, 246.94, 293.66, 329.63, 392, 440],
+    bass: [82.41, 98, 123.47, 146.83],
+    leadType: "triangle",
+    accentType: "sine",
+    bassType: "triangle",
+    leadVolume: 0.13,
+    bassVolume: 0.055,
+    stride: 2
+  },
+  bizi: {
+    scale: [185, 220, 246.94, 277.18, 329.63, 369.99, 440, 493.88],
+    bass: [92.5, 110, 138.59, 164.81],
+    leadType: "square",
+    accentType: "sine",
+    bassType: "sawtooth",
+    leadVolume: 0.095,
+    bassVolume: 0.055,
+    stride: 4
+  }
+};
+
 function suitSymbol(suit) {
   return { S: "♠", H: "♥", D: "♦", C: "♣" }[suit] || suit;
 }
@@ -197,13 +250,14 @@ function playTone(freq, start, duration, type = "sine", volume = 0.22) {
 function scheduleMusicBar() {
   if (!state.musicEnabled || !audioContext) return;
   const now = audioContext.currentTime;
-  const scale = [196, 220, 247, 294, 330, 392, 440, 494];
-  const bass = [98, 98, 130.81, 146.83];
+  const theme = MUSIC_THEMES[factionThemeId()] || MUSIC_THEMES.neutral;
   for (let i = 0; i < 8; i += 1) {
     const t = now + i * 0.42;
-    const note = scale[(musicStep + i * 2) % scale.length];
-    playTone(note, t, 0.28, i % 3 === 0 ? "triangle" : "sine", 0.16);
-    if (i % 2 === 0) playTone(bass[((musicStep / 8) | 0) % bass.length], t, 0.38, "sawtooth", 0.075);
+    const note = theme.scale[(musicStep + i * theme.stride) % theme.scale.length];
+    playTone(note, t, 0.28, i % 3 === 0 ? theme.leadType : theme.accentType, theme.leadVolume);
+    if (i % 2 === 0) {
+      playTone(theme.bass[((musicStep / 8) | 0) % theme.bass.length], t, 0.38, theme.bassType, theme.bassVolume);
+    }
   }
   musicStep = (musicStep + 1) % 64;
 }
@@ -754,6 +808,27 @@ function fightBoard() {
     .join("")}</div>`;
 }
 
+function lobbySetupArea(room) {
+  return `<section class="lobby-setup-grid">
+    <section class="panel lobby-guide-panel">
+      <span class="eyebrow">Table Setup</span>
+      <h2>Waiting Room</h2>
+      <p>This is the setup screen. The battle lanes appear after everyone chooses a faction and the game starts.</p>
+      <div class="setup-checklist">
+        <div><strong>1</strong><span>Invite 2-4 players with the room link.</span></div>
+        <div><strong>2</strong><span>Each player picks a faction in the panel on the right.</span></div>
+        <div><strong>3</strong><span>Everyone presses Start Game when ready.</span></div>
+      </div>
+      <h3>Lobby Log</h3>
+      <div class="log compact-log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
+    </section>
+    <aside class="panel action-panel lobby-action-panel">
+      <h2>Choose Faction</h2>
+      ${controls()}
+    </aside>
+  </section>`;
+}
+
 function game() {
   const room = state.room;
   const activePlayer = room.players[room.activePlayer];
@@ -761,6 +836,20 @@ function game() {
   const turnSpotlight = room.phase !== "lobby" && activePlayer ? `<section class="turn-spotlight">
     <span>Current Turn</span><strong>Player ${activePlayer.seat}: ${activePlayer.name}</strong>
   </section>` : "";
+  const playArea = room.phase === "lobby" ? lobbySetupArea(room) : `<section class="game-grid">
+      <div class="panel table-panel">
+        <h2>Table</h2>
+        <p class="table-message">${room.message}</p>
+        ${fightBoard()}
+      </div>
+      <aside class="panel action-panel">
+        <h2>Action</h2>
+        ${controls()}
+        ${paymentTrailPanel(room)}
+        <h2 style="margin-top:18px">Log</h2>
+        <div class="log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
+      </aside>
+    </section>`;
   return `<div class="page game-page theme-${factionThemeId()}"><main class="shell game-shell">
     ${state.toast ? `<div class="toast" data-action="dismiss-toast">${state.toast.text}</div>` : ""}
     <section class="topbar game-topbar">
@@ -787,20 +876,7 @@ function game() {
     ${lobbyExtras}
     ${opponentAbilitiesPanel(room)}
     <section class="players game-players">${seatNumbers(room).map((seat) => playerPanel(room.players[seat])).join("")}</section>
-    <section class="game-grid">
-      <div class="panel table-panel">
-        <h2>Table</h2>
-        <p class="table-message">${room.message}</p>
-        ${fightBoard()}
-      </div>
-      <aside class="panel action-panel">
-        <h2>Action</h2>
-        ${controls()}
-        ${paymentTrailPanel(room)}
-        <h2 style="margin-top:18px">Log</h2>
-        <div class="log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
-      </aside>
-    </section>
+    ${playArea}
   </main></div>`;
 }
 

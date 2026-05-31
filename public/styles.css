@@ -560,6 +560,15 @@ select {
   flex: 1;
 }
 
+.lobby-setup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+  gap: 10px;
+  align-items: stretch;
+  min-height: 0;
+  flex: 1;
+}
+
 .card,
 .panel {
   border: 1px solid #ccd5df;
@@ -642,6 +651,52 @@ select {
 .action-panel {
   max-height: none;
   overflow: auto;
+}
+
+.lobby-guide-panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.lobby-guide-panel p {
+  margin: 0;
+  color: #52657b;
+}
+
+.lobby-action-panel {
+  border-color: #f6c85f;
+  box-shadow: 0 0 0 2px rgba(246, 200, 95, 0.16);
+}
+
+.setup-checklist {
+  display: grid;
+  gap: 8px;
+}
+
+.setup-checklist div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.86);
+  padding: 9px;
+}
+
+.setup-checklist strong {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--theme-accent);
+  color: white;
+}
+
+.compact-log {
+  max-height: 150px;
 }
 
 .table-message {
@@ -1268,6 +1323,7 @@ select {
   .menu-dashboard,
   .rulebook-grid,
   .game-grid,
+  .lobby-setup-grid,
   .players,
   .status {
     grid-template-columns: 1fr;
