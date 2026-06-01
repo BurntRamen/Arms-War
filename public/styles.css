@@ -338,6 +338,46 @@ select {
   line-height: 1.4;
 }
 
+.event-reference-card > p {
+  margin: 0;
+  color: #52657b;
+}
+
+.event-roll-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.event-roll {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+}
+
+.event-roll strong {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #174c7c;
+  color: white;
+  font-size: 16px;
+}
+
+.event-roll p {
+  margin: 0;
+  color: #52657b;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
@@ -1411,6 +1451,7 @@ select {
   .menu-start-steps,
   .menu-dashboard,
   .rulebook-grid,
+  .event-roll-grid,
   .game-grid,
   .lobby-setup-grid,
   .players,

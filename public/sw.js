@@ -1,4 +1,4 @@
-const CACHE_NAME = "arms-war-app-v4";
+const CACHE_NAME = "arms-war-app-v6";
 const APP_SHELL = [
   "/",
   "/index.html",

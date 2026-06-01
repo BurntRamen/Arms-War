@@ -429,6 +429,25 @@ function rulebookPanel() {
   </section>`;
 }
 
+function eventReferencePanel() {
+  const events = [
+    ["1", "Each player moves the top two cards of their main deck face-down to the bottom of their side deck."],
+    ["2", "Each player searches their main or side deck for a 2, reveals it, and puts it on top of their main deck."],
+    ["3", "Each player wagers 1 gold and reveals the top main-deck card. Highest value wins the pot; ties split or reveal again for leftovers."],
+    ["4", "Each player puts the top two cards of their side deck face-down on top of their main deck."],
+    ["5", "Each player searches their main or side deck for a King, reveals it, and puts it on top of their main deck."],
+    ["6", "Waygate check: if you have 3 or more technologies and more gold than every other player, you win."]
+  ];
+  return `<section class="menu-card wide-card event-reference-card">
+    <div class="menu-card-label">Event Reference</div>
+    <h2>What Events Do</h2>
+    <p>When a player chooses Event, an event die is rolled and every player resolves the matching result.</p>
+    <div class="event-roll-grid">
+      ${events.map(([roll, text]) => `<div class="event-roll"><strong>${roll}</strong><p>${text}</p></div>`).join("")}
+    </div>
+  </section>`;
+}
+
 function leaderboardPanel() {
   const rows = state.social.leaderboard.length
     ? state.social.leaderboard
@@ -616,6 +635,7 @@ function menu() {
     ${menuStartSteps()}
     <section class="menu-dashboard">
       ${rulebookPanel()}
+      ${eventReferencePanel()}
       ${leaderboardPanel()}
       ${friendsPanel()}
     </section>
@@ -705,19 +725,28 @@ function fightControls(room, me) {
     }
     const maxBet = Math.min(room.fight.maxBet || 5, me.gold);
     const canConfirm = state.selectedBet >= currentBet && state.selectedBet <= maxBet;
-    const confirmLabel = state.selectedBet === currentBet ? `Agree ${currentBet}` : `Raise to ${state.selectedBet}`;
-    return `<p>Fight wagers max out at <strong>${room.fight.maxBet || 5}</strong> gold. Choose your total wager, then confirm.</p>
+    const needsResponse = me.agreedBet !== currentBet;
+    const canConcede = room.fight.opened && needsResponse;
+    const confirmLabel = !room.fight.opened
+      ? `Open at ${state.selectedBet}`
+      : state.selectedBet === currentBet
+        ? `Match ${currentBet}`
+        : `Raise to ${state.selectedBet}`;
+    const prompt = room.fight.opened && needsResponse
+      ? `The current wager is <strong>${currentBet}</strong> gold. Match it, raise it, or concede.`
+      : `Fight wagers max out at <strong>${room.fight.maxBet || 5}</strong> gold. Choose your total wager, then confirm.`;
+    return `<p>${prompt}</p>
       <div class="bet-box">
         <div class="bet-readout">
           <span>Current bet</span><strong>${currentBet}</strong>
         </div>
         <div class="bet-picker">
           <button class="secondary icon-button" data-action="adjust-bet" data-delta="-1" ${state.selectedBet <= currentBet ? "disabled" : ""}>-</button>
-          <div class="bet-total"><span>Your wager</span><strong>${state.selectedBet}</strong></div>
+          <div class="bet-total"><span>${needsResponse ? "Your response" : "Your wager"}</span><strong>${state.selectedBet}</strong></div>
           <button class="secondary icon-button" data-action="adjust-bet" data-delta="1" ${state.selectedBet >= maxBet ? "disabled" : ""}>+</button>
         </div>
         <button data-action="confirm-bet" ${canConfirm ? "" : "disabled"}>${confirmLabel}</button>
-        <button class="danger" data-action="concede">Concede</button>
+        <button class="danger" data-action="concede" ${canConcede ? "" : "disabled"}>Concede</button>
       </div>
       <p class="hint">You have ${me.gold} gold. The fight cap is ${room.fight.maxBet || 5}.</p>
       <h3>Your fight cards</h3>

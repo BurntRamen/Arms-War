@@ -641,8 +641,8 @@ function betFight(room, player, action, amount) {
   if (room.phase !== "fightBet") throw new Error("No fight bet is pending.");
   if (player.fightConceded) throw new Error("You already conceded this fight.");
   if (action === "concede") {
-    if (player.seat === room.activePlayer) throw new Error("The active fighter cannot concede the opening hand.");
     if (!room.fight.opened) throw new Error("Wait for the active fighter to open the wager.");
+    if (player.agreedBet === room.fight.currentBet) throw new Error("You already matched the current wager.");
     player.fightConceded = true;
     recordFightPayment(room, player, {
       type: "concede",
