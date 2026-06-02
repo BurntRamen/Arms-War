@@ -1,4 +1,4 @@
-const CACHE_NAME = "arms-war-app-v7";
+const CACHE_NAME = "arms-war-app-v8";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -13,7 +13,14 @@ const APP_SHELL = [
   "/assets/factions/frumo-commander.jpg",
   "/assets/factions/frumo-city.jpg",
   "/assets/factions/bizi-commander.jpg",
-  "/assets/factions/bizi-city.jpg"
+  "/assets/factions/bizi-city.jpg",
+  "/assets/music/rumin-theme-1.mp3",
+  "/assets/music/rumin-theme-2.mp3",
+  "/assets/music/sheen-theme-1.mp3",
+  "/assets/music/sheen-theme-2.mp3",
+  "/assets/music/frumo-theme-1.mp3",
+  "/assets/music/frumo-theme-2.mp3",
+  "/assets/music/bizi-theme-1.mp3"
 ];
 
 self.addEventListener("install", (event) => {

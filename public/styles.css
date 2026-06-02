@@ -66,10 +66,15 @@ select {
   --theme-bg-b: #d8e0e8;
   --theme-accent: #174c7c;
   --theme-accent-2: #197278;
+  --theme-line: rgba(23, 76, 124, 0.14);
+  --theme-mark: rgba(246, 200, 95, 0.13);
+  --theme-shadow: rgba(12, 20, 32, 0.16);
   --theme-soft: rgba(255, 255, 255, 0.9);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 82%, white), var(--theme-bg-b)),
-    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.55), transparent 34%);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 78%, white), var(--theme-bg-b)),
+    repeating-linear-gradient(90deg, transparent 0 54px, var(--theme-line) 54px 56px),
+    repeating-linear-gradient(0deg, transparent 0 42px, var(--theme-mark) 42px 44px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), var(--theme-shadow));
   height: 100vh;
   overflow: hidden;
   padding: 12px;
@@ -81,42 +86,94 @@ select {
   --theme-bg-b: #d8e0e8;
   --theme-accent: #174c7c;
   --theme-accent-2: #197278;
+  --theme-line: rgba(23, 76, 124, 0.14);
+  --theme-mark: rgba(246, 200, 95, 0.13);
+  --theme-shadow: rgba(12, 20, 32, 0.12);
   min-height: 100vh;
   overflow: auto;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 72%, white), color-mix(in srgb, var(--theme-bg-b) 84%, #f8fafc)),
-    linear-gradient(90deg, rgba(23, 76, 124, 0.09) 0 1px, transparent 1px 96px),
-    linear-gradient(0deg, rgba(23, 76, 124, 0.07) 0 1px, transparent 1px 72px);
+    repeating-linear-gradient(90deg, transparent 0 94px, var(--theme-line) 94px 96px),
+    repeating-linear-gradient(0deg, transparent 0 70px, var(--theme-mark) 70px 72px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), var(--theme-shadow));
   padding: 18px;
   padding-bottom: max(18px, env(safe-area-inset-bottom));
 }
 
 .theme-rumin {
-  --theme-bg-a: #f1d7b4;
-  --theme-bg-b: #c9894b;
-  --theme-accent: #8f4f28;
-  --theme-accent-2: #2f6b57;
+  --theme-bg-a: #f3c986;
+  --theme-bg-b: #96542f;
+  --theme-accent: #7d351f;
+  --theme-accent-2: #24604d;
+  --theme-line: rgba(125, 53, 31, 0.24);
+  --theme-mark: rgba(36, 96, 77, 0.16);
+  --theme-shadow: rgba(67, 30, 18, 0.2);
 }
 
 .theme-sheen {
-  --theme-bg-a: #d8ead4;
-  --theme-bg-b: #7aa77e;
-  --theme-accent: #315f3a;
-  --theme-accent-2: #7b5a2d;
+  --theme-bg-a: #d5edcd;
+  --theme-bg-b: #426f48;
+  --theme-accent: #224f2e;
+  --theme-accent-2: #7c5a2c;
+  --theme-line: rgba(34, 79, 46, 0.24);
+  --theme-mark: rgba(124, 90, 44, 0.18);
+  --theme-shadow: rgba(21, 55, 33, 0.2);
 }
 
 .theme-frumo {
-  --theme-bg-a: #d9e5f3;
-  --theme-bg-b: #6b95c7;
-  --theme-accent: #285f9f;
-  --theme-accent-2: #477c8b;
+  --theme-bg-a: #d8ebf5;
+  --theme-bg-b: #3d78a8;
+  --theme-accent: #1f5d91;
+  --theme-accent-2: #2e7f8a;
+  --theme-line: rgba(31, 93, 145, 0.26);
+  --theme-mark: rgba(8, 84, 102, 0.18);
+  --theme-shadow: rgba(20, 52, 79, 0.2);
 }
 
 .theme-bizi {
-  --theme-bg-a: #efe0b6;
-  --theme-bg-b: #b7984c;
-  --theme-accent: #60512a;
-  --theme-accent-2: #7a6740;
+  --theme-bg-a: #f0dfaa;
+  --theme-bg-b: #8c793d;
+  --theme-accent: #534923;
+  --theme-accent-2: #876f2e;
+  --theme-line: rgba(83, 73, 35, 0.28);
+  --theme-mark: rgba(18, 34, 47, 0.14);
+  --theme-shadow: rgba(58, 49, 23, 0.21);
+}
+
+.theme-rumin.game-page,
+.theme-rumin.lobby-page {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 74%, white), var(--theme-bg-b)),
+    repeating-linear-gradient(45deg, transparent 0 34px, var(--theme-line) 34px 37px),
+    repeating-linear-gradient(90deg, transparent 0 118px, var(--theme-mark) 118px 122px),
+    linear-gradient(180deg, rgba(255, 244, 224, 0.2), var(--theme-shadow));
+}
+
+.theme-sheen.game-page,
+.theme-sheen.lobby-page {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 76%, white), var(--theme-bg-b)),
+    repeating-linear-gradient(115deg, transparent 0 32px, var(--theme-line) 32px 35px),
+    repeating-linear-gradient(25deg, transparent 0 86px, var(--theme-mark) 86px 90px),
+    linear-gradient(180deg, rgba(233, 250, 226, 0.24), var(--theme-shadow));
+}
+
+.theme-frumo.game-page,
+.theme-frumo.lobby-page {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 76%, white), var(--theme-bg-b)),
+    repeating-linear-gradient(0deg, transparent 0 28px, var(--theme-line) 28px 30px),
+    repeating-linear-gradient(90deg, transparent 0 72px, var(--theme-mark) 72px 76px),
+    linear-gradient(180deg, rgba(219, 245, 255, 0.24), var(--theme-shadow));
+}
+
+.theme-bizi.game-page,
+.theme-bizi.lobby-page {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 72%, white), var(--theme-bg-b)),
+    repeating-linear-gradient(90deg, transparent 0 24px, var(--theme-line) 24px 26px),
+    repeating-linear-gradient(0deg, transparent 0 24px, var(--theme-mark) 24px 26px),
+    linear-gradient(180deg, rgba(255, 245, 215, 0.22), var(--theme-shadow));
 }
 
 .menu-page {

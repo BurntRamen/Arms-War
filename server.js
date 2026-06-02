@@ -1116,6 +1116,9 @@ function serveStatic(req, res) {
       ".jpeg": "image/jpeg",
       ".js": "text/javascript",
       ".json": "application/json",
+      ".m4a": "audio/mp4",
+      ".mp3": "audio/mpeg",
+      ".ogg": "audio/ogg",
       ".svg": "image/svg+xml"
     };
     const type = types[ext] || "application/octet-stream";

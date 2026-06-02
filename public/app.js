@@ -28,6 +28,8 @@ let audioContext = null;
 let musicTimer = null;
 let musicStep = 0;
 let masterGain = null;
+let musicAudio = null;
+let activeMusicTheme = "";
 let roomStream = null;
 let roomStreamKey = "";
 
@@ -109,6 +111,13 @@ const MUSIC_THEMES = {
     bassVolume: 0.055,
     stride: 4
   }
+};
+
+const MUSIC_TRACKS = {
+  rumin: ["/assets/music/rumin-theme-1.mp3", "/assets/music/rumin-theme-2.mp3"],
+  sheen: ["/assets/music/sheen-theme-1.mp3", "/assets/music/sheen-theme-2.mp3"],
+  frumo: ["/assets/music/frumo-theme-1.mp3", "/assets/music/frumo-theme-2.mp3"],
+  bizi: ["/assets/music/bizi-theme-1.mp3"]
 };
 
 function suitSymbol(suit) {
@@ -262,9 +271,9 @@ function scheduleMusicBar() {
   musicStep = (musicStep + 1) % 64;
 }
 
-function startMusic() {
+function startProceduralMusic() {
   ensureAudio();
-  stopMusic();
+  stopProceduralMusic();
   if (masterGain) {
     masterGain.gain.cancelScheduledValues(audioContext.currentTime);
     masterGain.gain.setValueAtTime(0.38, audioContext.currentTime);
@@ -273,12 +282,58 @@ function startMusic() {
   musicTimer = setInterval(scheduleMusicBar, 3200);
 }
 
-function stopMusic() {
+function stopProceduralMusic() {
   if (musicTimer) clearInterval(musicTimer);
   musicTimer = null;
   if (audioContext && masterGain) {
     masterGain.gain.cancelScheduledValues(audioContext.currentTime);
     masterGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+  }
+}
+
+function stopMusic() {
+  stopProceduralMusic();
+  if (musicAudio) {
+    musicAudio.pause();
+    musicAudio.src = "";
+    musicAudio = null;
+  }
+  activeMusicTheme = "";
+}
+
+function pickFactionTrack(themeId) {
+  const tracks = MUSIC_TRACKS[themeId] || [];
+  if (!tracks.length) return "";
+  return tracks[Math.floor(Math.random() * tracks.length)];
+}
+
+function musicIsPlaying() {
+  return Boolean(musicTimer || (musicAudio && !musicAudio.paused));
+}
+
+function startMusic() {
+  const themeId = factionThemeId();
+  const track = pickFactionTrack(themeId);
+  stopMusic();
+  activeMusicTheme = themeId;
+  if (!track) {
+    startProceduralMusic();
+    return;
+  }
+  musicAudio = new Audio(track);
+  musicAudio.volume = 0.72;
+  musicAudio.loop = false;
+  musicAudio.addEventListener("ended", () => {
+    if (state.musicEnabled) startMusic();
+  });
+  musicAudio.play().catch(() => {
+    if (state.musicEnabled) startProceduralMusic();
+  });
+}
+
+function syncMusicTheme() {
+  if (state.musicEnabled && musicIsPlaying() && activeMusicTheme !== factionThemeId()) {
+    startMusic();
   }
 }
 
@@ -300,6 +355,7 @@ function applyRoom(room) {
     showToast(room.notice);
     state.lastNoticeId = room.noticeId;
   }
+  syncMusicTheme();
 }
 
 function stopRoomStream() {
@@ -1105,7 +1161,7 @@ if (state.roomCode && state.token) {
 window.addEventListener(
   "pointerdown",
   () => {
-    if (state.musicEnabled && !musicTimer) startMusic();
+    if (state.musicEnabled && !musicIsPlaying()) startMusic();
   },
   { once: true }
 );
