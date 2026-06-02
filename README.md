@@ -16,6 +16,15 @@ node server.js
 
 Open `http://localhost:4173` in multiple browser windows. Create a table in one window, share that room code or invite link with 1-3 other players, choose factions in the lobby Action panel, then start the game.
 
+## Check The App
+
+```powershell
+npm run check
+npm run smoke
+```
+
+`npm run smoke` starts Arms War on a temporary local port, creates a four-player room, gets everyone through lobby readiness, runs into a fight, verifies raise/concede betting, places cards, reviews fight results, and finishes the fight.
+
 ## Deploy The Website
 
 The recommended first deployment is a single Render Web Service. Arms War is a stateful multiplayer Node app, so keeping the frontend and backend together is simpler than splitting it across Vercel and Render right now.
@@ -30,6 +39,18 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the Render setup. This repo includes `ren
 - Plain Node server with no dependency install required.
 - Local API health check at `POST /api/health`.
 - Render deployment config in `render.yaml`.
+- Optional friends, messages, and leaderboard persistence with `ARMS_WAR_DATA_FILE`.
+
+## Optional Social Persistence
+
+By default, friends, messages, and leaderboard stats are in memory. To persist them to a writable file, start the app with `ARMS_WAR_DATA_FILE` set:
+
+```powershell
+$env:ARMS_WAR_DATA_FILE="C:\arms-war-data\social.json"
+npm start
+```
+
+On Render, this should point to a mounted persistent disk path. Active multiplayer rooms are still intentionally in memory for this prototype.
 
 ## Implemented Rules
 

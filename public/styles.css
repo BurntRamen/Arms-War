@@ -73,6 +73,7 @@ select {
   height: 100vh;
   overflow: hidden;
   padding: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 .lobby-page {
@@ -87,6 +88,7 @@ select {
     linear-gradient(90deg, rgba(23, 76, 124, 0.09) 0 1px, transparent 1px 96px),
     linear-gradient(0deg, rgba(23, 76, 124, 0.07) 0 1px, transparent 1px 72px);
   padding: 18px;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
 }
 
 .theme-rumin {
@@ -920,7 +922,7 @@ select {
 
 .status {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -1437,10 +1439,16 @@ select {
     min-height: 100vh;
     overflow: auto;
     padding: 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
   .game-shell {
     height: auto;
+  }
+
+  .lobby-page {
+    padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
   .topbar,
@@ -1481,8 +1489,25 @@ select {
     width: 100%;
   }
 
+  .topbar-actions {
+    justify-content: stretch;
+  }
+
+  .topbar-actions > button,
+  .topbar-actions > .music-button {
+    flex: 1 1 132px;
+  }
+
   .room-share {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .room-share span {
+    grid-column: 1 / -1;
+  }
+
+  .room-share input {
+    min-width: 0;
   }
 
   .lanes {
@@ -1496,6 +1521,11 @@ select {
   .lobby-ready-bar {
     position: sticky;
     bottom: 0;
+    z-index: 5;
+    margin-inline: -10px;
+    padding: 10px;
+    background: rgba(255, 248, 222, 0.96);
+    border-top: 1px solid rgba(246, 200, 95, 0.7);
   }
 }
 
@@ -1513,5 +1543,9 @@ select {
 
   .game-page .lane {
     padding: 6px;
+  }
+
+  .room-share {
+    grid-template-columns: 1fr;
   }
 }

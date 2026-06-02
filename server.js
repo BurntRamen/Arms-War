@@ -8,6 +8,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const STARTING_GOLD = 10;
 const MAX_FIGHT_BET = 5;
 const MAX_PLAYERS = 4;
+const SOCIAL_DATA_FILE = process.env.ARMS_WAR_DATA_FILE || "";
 
 const rooms = new Map();
 const profiles = new Map();
@@ -110,6 +111,56 @@ function serializeProfile(profile) {
   };
 }
 
+function loadSocialData() {
+  if (!SOCIAL_DATA_FILE) return;
+  try {
+    if (!fs.existsSync(SOCIAL_DATA_FILE)) return;
+    const saved = JSON.parse(fs.readFileSync(SOCIAL_DATA_FILE, "utf8"));
+    for (const item of saved.profiles || []) {
+      const profile = {
+        name: normalizeName(item.name),
+        wins: Number(item.wins) || 0,
+        games: Number(item.games) || 0,
+        friends: new Set((item.friends || []).map(profileKey))
+      };
+      profiles.set(profileKey(profile.name), profile);
+    }
+    for (const message of saved.messages || []) {
+      if (!message.from || !message.to || !message.text) continue;
+      messages.push({
+        id: String(message.id || id("msg_")),
+        from: normalizeName(message.from),
+        to: normalizeName(message.to),
+        text: String(message.text).slice(0, 240),
+        sentAt: message.sentAt || new Date().toISOString()
+      });
+    }
+    while (messages.length > 300) messages.shift();
+    console.log(`Loaded Arms War social data from ${SOCIAL_DATA_FILE}`);
+  } catch (error) {
+    console.warn(`Could not load Arms War social data: ${error.message}`);
+  }
+}
+
+function saveSocialData() {
+  if (!SOCIAL_DATA_FILE) return;
+  try {
+    fs.mkdirSync(path.dirname(SOCIAL_DATA_FILE), { recursive: true });
+    const payload = {
+      profiles: [...profiles.values()].map((profile) => ({
+        name: profile.name,
+        wins: profile.wins,
+        games: profile.games,
+        friends: [...profile.friends]
+      })),
+      messages
+    };
+    fs.writeFileSync(SOCIAL_DATA_FILE, JSON.stringify(payload, null, 2));
+  } catch (error) {
+    console.warn(`Could not save Arms War social data: ${error.message}`);
+  }
+}
+
 function getLeaderboard() {
   return [...profiles.values()]
     .map((profile) => ({
@@ -130,6 +181,7 @@ function recordGameResult(room, winnerSeat) {
     profile.games += 1;
     if (player.seat === winnerSeat) profile.wins += 1;
   }
+  saveSocialData();
 }
 
 function getSocialPayload(name) {
@@ -1087,6 +1139,7 @@ async function handleApi(req, res) {
       if (profileKey(profile.name) === profileKey(friend.name)) throw new Error("You cannot add yourself.");
       profile.friends.add(profileKey(friend.name));
       friend.friends.add(profileKey(profile.name));
+      saveSocialData();
       return sendJson(res, 200, getSocialPayload(profile.name));
     }
     if (req.url === "/api/send-message" && req.method === "POST") {
@@ -1102,6 +1155,7 @@ async function handleApi(req, res) {
         sentAt: new Date().toISOString()
       });
       while (messages.length > 300) messages.shift();
+      saveSocialData();
       return sendJson(res, 200, getSocialPayload(from.name));
     }
     if (req.url === "/api/create" && req.method === "POST") {
@@ -1174,6 +1228,8 @@ async function handleApi(req, res) {
     return sendJson(res, 400, { error: error.message });
   }
 }
+
+loadSocialData();
 
 const server = http.createServer((req, res) => {
   if (req.url.startsWith("/api/stream") && req.method === "GET") {

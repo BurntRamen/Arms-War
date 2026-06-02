@@ -21,4 +21,21 @@ Vercel is excellent for static sites and frontend apps, but Arms War is currentl
 
 ## Current Limitation
 
-Rooms, messages, friends, and leaderboard data are stored in memory. They work while the server is running, but reset when the server restarts or redeploys. For a more permanent public version, add a database such as Supabase, Neon/Postgres, or Render Postgres.
+Active game rooms are stored in memory. They work while the server is running, but reset when the server restarts or redeploys. For a more permanent public version, add a database such as Supabase, Neon/Postgres, or Render Postgres.
+
+Friends, messages, and leaderboard data can now persist to a file if the server has a writable durable path. Set this environment variable:
+
+- `ARMS_WAR_DATA_FILE`: full path to a JSON file, such as `/var/data/arms-war-social.json`
+
+On Render, use a persistent disk before relying on that file for public data. Without a persistent disk, the file can still disappear on redeploys.
+
+## Pre-Deploy Checks
+
+Run these before pushing changes:
+
+```powershell
+npm run check
+npm run smoke
+```
+
+The smoke test starts a temporary local server and walks through a four-player multiplayer fight, including raise, concede, lane placement, and fight-result acknowledgement.
