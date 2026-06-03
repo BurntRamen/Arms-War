@@ -481,14 +481,15 @@ function nextTurn(room) {
   log(room, `Turn ${room.turn}. Player ${room.activePlayer} is active.`);
 }
 
-function checkWaygate(room, seat) {
+function checkWaygate(room, seat, noticePrefix = "") {
   const player = room.players[seat];
   const opponents = livePlayers(room).filter((candidate) => candidate.seat !== seat);
   if (player.technologies >= 3 && opponents.every((opponent) => player.gold > opponent.gold)) {
     room.phase = "gameOver";
     room.winner = seat;
     recordGameResult(room, seat);
-    announce(room, `${player.name} opened the Waygate with ${player.technologies} technologies and the most gold.`);
+    const result = `${player.name} opened the Waygate with ${player.technologies} technologies and the most gold.`;
+    announce(room, noticePrefix ? `${noticePrefix} Result: ${result}` : result);
     return true;
   }
   log(room, `${player.name} triggered the Waygate, but does not yet have 3 technologies and more gold than everyone else.`);
@@ -609,31 +610,70 @@ function eventWager(room) {
   return `Wager reveals: ${reveals.map((r) => `P${r.seat} ${cardLabel(r.card)}`).join(", ")}. ${winners.map((s) => room.players[s].name).join(" and ")} won the pot.`;
 }
 
+const EVENT_DEFINITIONS = {
+  1: {
+    name: "Main Deck Drain",
+    effect: "Each player moves the top two cards of their main deck face-down to the bottom of their side deck."
+  },
+  2: {
+    name: "Find the Twos",
+    effect: "Each player searches their main deck or side deck for a 2, reveals it, and puts it on top of their main deck."
+  },
+  3: {
+    name: "Gold Wager",
+    effect: "Each player wagers 1 gold, then reveals the top card of their main deck. Highest value wins the pot."
+  },
+  4: {
+    name: "Side Deck Surge",
+    effect: "Each player puts the top two cards of their side deck face-down on top of their main deck."
+  },
+  5: {
+    name: "Find the Kings",
+    effect: "Each player searches their main deck or side deck for a King, reveals it, and puts it on top of their main deck."
+  },
+  6: {
+    name: "Waygate",
+    effect: "The active player checks whether they have three or more technologies and more gold than every other player."
+  }
+};
+
+function eventNotice(roll, result) {
+  const event = EVENT_DEFINITIONS[roll];
+  if (!event) return `Event ${roll}. Result: ${result}`;
+  return `Event ${roll}: ${event.name}. Effect: ${event.effect} Result: ${result}`;
+}
+
+function searchedRankText(player, rank) {
+  const card = findRank(player, rank);
+  return card ? `${player.name} found ${cardLabel(card)}` : `${player.name} did not find a ${rank}`;
+}
+
 function resolveEvent(room, forcedRoll) {
   const roll = forcedRoll || rollDie();
   let detail = "";
   if (roll === 1) {
     for (const player of livePlayers(room)) putBottom(player.sideDeck, drawTop(player.mainDeck, 2));
-    detail = "Each player moved the top two main-deck cards to the bottom of their side deck.";
+    detail = "All players moved those cards.";
   } else if (roll === 2) {
     detail = livePlayers(room)
-      .map((player) => `${player.name} found ${cardLabel(findRank(player, "2"))}`)
+      .map((player) => searchedRankText(player, "2"))
       .join(". ");
   } else if (roll === 3) {
     detail = eventWager(room);
   } else if (roll === 4) {
     for (const player of livePlayers(room)) player.mainDeck.unshift(...drawTop(player.sideDeck, 2));
-    detail = "Each player moved the top two side-deck cards onto their main deck.";
+    detail = "All players moved those cards.";
   } else if (roll === 5) {
     detail = livePlayers(room)
-      .map((player) => `${player.name} found ${cardLabel(findRank(player, "K"))}`)
+      .map((player) => searchedRankText(player, "K"))
       .join(". ");
   } else if (roll === 6) {
-    const won = checkWaygate(room, room.activePlayer);
+    const event = EVENT_DEFINITIONS[roll];
+    const won = checkWaygate(room, room.activePlayer, `Event ${roll}: ${event.name}. Effect: ${event.effect}`);
     if (won) return;
-    detail = "Waygate event checked the active player.";
+    detail = "The active player did not have three or more technologies and more gold than every other player.";
   }
-  const summary = `Event roll ${roll}. ${detail}`;
+  const summary = eventNotice(roll, detail);
   announce(room, summary);
   if (room.phase !== "gameOver") {
     nextTurn(room);
