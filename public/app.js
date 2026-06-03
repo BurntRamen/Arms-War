@@ -702,8 +702,8 @@ function playerPanel(player) {
   if (!player) return `<div class="player open-player"><h3>Open Seat</h3><div>Invite a player before starting.</div></div>`;
   const you = state.room.you === player.seat;
   const active = state.room.activePlayer === player.seat && state.room.phase !== "lobby";
-  const fightHand = player.fightCards?.length
-    ? `<div class="mini-hand"><span>${you ? "Your fight hand" : "Visible fight hand"}</span><div class="mini-cards">${player.fightCards.map((card) => cardView(card)).join("")}</div></div>`
+  const fightHand = you && player.fightCards?.length
+    ? `<div class="mini-hand"><span>Your fight hand</span><div class="mini-cards">${player.fightCards.map((card) => cardView(card)).join("")}</div></div>`
     : "";
   return `<div class="player ${you ? "you" : ""} ${active ? "active-player" : ""} player-${player.factionId || "neutral"}">
     <h3>P${player.seat}: ${player.name}${you ? " (You)" : ""}</h3>

@@ -107,6 +107,16 @@ async function run() {
   }
 
   let room = await findFight(code, players);
+  const firstViewerRoom = await state(code, players[0].token);
+  if (!firstViewerRoom.players[players[0].seat].fightCards.length) {
+    throw new Error("Viewer could not see their own fight hand.");
+  }
+  const visibleOpponentHand = players
+    .filter((player) => player.seat !== players[0].seat)
+    .some((player) => firstViewerRoom.players[player.seat].fightCards.length);
+  if (visibleOpponentHand) {
+    throw new Error("Viewer could see an opponent fight hand before showdown.");
+  }
   const active = players.find((player) => player.seat === room.activePlayer);
   const responders = players.filter((player) => player.seat !== active.seat);
 

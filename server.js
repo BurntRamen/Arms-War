@@ -1063,7 +1063,7 @@ function sanitize(room, token) {
             mainDeckCount: player.mainDeck.length,
             sideDeckCount: player.sideDeck.length,
             peek: isViewer ? player.peek : player.peek ? player.peek.map(() => null) : null,
-            fightCards: player.fightCards,
+            fightCards: isViewer ? player.fightCards : [],
             fightLanes: player.fightLanes.map((card) => {
               if (room.phase === "fightPlace" && card && !isViewer) return { hidden: true };
               return card;
