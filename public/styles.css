@@ -787,6 +787,52 @@ select {
   overflow: auto;
 }
 
+.fight-action-panel {
+  position: sticky;
+  top: 8px;
+  align-self: start;
+  max-height: calc(100vh - 116px);
+}
+
+.fight-action-panel > h2:first-child {
+  margin-bottom: 4px;
+}
+
+.fight-action-panel .fight-steps {
+  margin-bottom: 8px;
+}
+
+.fight-action-panel p,
+.fight-action-panel .hint {
+  margin: 6px 0;
+}
+
+.fight-action-panel .row {
+  gap: 6px;
+}
+
+.fight-action-panel button,
+.fight-action-panel select {
+  padding: 8px 10px;
+}
+
+.fight-action-panel .cards {
+  margin: 6px 0 2px;
+}
+
+.fight-active .payment-trail {
+  max-height: 96px;
+  overflow: auto;
+}
+
+.fight-active .action-panel > h2[style] {
+  margin-top: 10px !important;
+}
+
+.fight-active .action-panel .log {
+  max-height: 120px;
+}
+
 .lobby-guide-panel {
   display: grid;
   align-content: start;
@@ -1534,6 +1580,17 @@ select {
   .lobby-action-panel {
     position: static;
     max-height: none;
+  }
+
+  .fight-game-grid .action-panel {
+    order: -1;
+    position: static;
+    max-height: none;
+  }
+
+  .fight-active .opponent-abilities,
+  .fight-active .game-players {
+    margin-top: 0;
   }
 
   .lobby-seats,

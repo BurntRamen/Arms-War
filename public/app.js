@@ -947,17 +947,18 @@ function lobbyScreen() {
 
 function game() {
   const room = state.room;
+  const fightActive = ["fightBet", "fightPlace", "fightAbility", "fightResults"].includes(room.phase);
   const activePlayer = room.players[room.activePlayer];
   const turnSpotlight = room.phase !== "lobby" && activePlayer ? `<section class="turn-spotlight">
     <span>Current Turn</span><strong>Player ${activePlayer.seat}: ${activePlayer.name}</strong>
   </section>` : "";
-  const playArea = `<section class="game-grid">
+  const playArea = `<section class="game-grid ${fightActive ? "fight-game-grid" : ""}">
       <div class="panel table-panel">
         <h2>Table</h2>
         <p class="table-message">${room.message}</p>
         ${fightBoard()}
       </div>
-      <aside class="panel action-panel">
+      <aside class="panel action-panel ${fightActive ? "fight-action-panel" : ""}">
         <h2>Action</h2>
         ${controls()}
         ${paymentTrailPanel(room)}
@@ -965,7 +966,7 @@ function game() {
         <div class="log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
       </aside>
     </section>`;
-  return `<div class="page game-page theme-${factionThemeId()}"><main class="shell game-shell">
+  return `<div class="page game-page theme-${factionThemeId()} ${fightActive ? "fight-active" : ""}"><main class="shell game-shell">
     ${state.toast ? `<div class="toast" data-action="dismiss-toast">${state.toast.text}</div>` : ""}
     <section class="topbar game-topbar">
       <div>
@@ -989,8 +990,8 @@ function game() {
     </section>
     ${turnSpotlight}
     ${opponentAbilitiesPanel(room)}
-    <section class="players game-players">${seatNumbers(room).map((seat) => playerPanel(room.players[seat])).join("")}</section>
-    ${playArea}
+    ${fightActive ? playArea : `<section class="players game-players">${seatNumbers(room).map((seat) => playerPanel(room.players[seat])).join("")}</section>`}
+    ${fightActive ? `<section class="players game-players">${seatNumbers(room).map((seat) => playerPanel(room.players[seat])).join("")}</section>` : playArea}
   </main></div>`;
 }
 
