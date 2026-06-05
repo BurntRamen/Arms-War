@@ -1,8 +1,12 @@
 const { spawn } = require("child_process");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 
 const PORT = process.env.SMOKE_PORT || "4183";
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const FACTIONS = ["rumin", "sheen", "frumo", "bizi"];
+const DATA_FILE = path.join(os.tmpdir(), `arms-war-smoke-${Date.now()}.json`);
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -89,7 +93,34 @@ async function placeFightCards(code, player) {
   return room;
 }
 
+async function testAccounts() {
+  const suffix = Date.now().toString(36);
+  const oneName = `SmokeAcctA${suffix}`;
+  const twoName = `SmokeAcctB${suffix}`;
+  const one = await post("/api/register", { name: oneName, password: "testpass1" });
+  const two = await post("/api/register", { name: twoName, password: "testpass2" });
+  if (!one.accountToken || !two.accountToken) throw new Error("Account registration did not return tokens.");
+
+  const befriended = await post("/api/add-friend", {
+    accountToken: one.accountToken,
+    friendName: twoName
+  });
+  if (!befriended.profile.friends.includes(twoName)) throw new Error("Friend was not added to the saved account.");
+
+  await post("/api/send-message", {
+    accountToken: one.accountToken,
+    to: twoName,
+    text: "Smoke test message"
+  });
+  const inbox = await post("/api/social", { accountToken: two.accountToken });
+  if (!inbox.messages.some((message) => message.from === oneName && message.text === "Smoke test message")) {
+    throw new Error("Friend message was not visible to the recipient.");
+  }
+}
+
 async function run() {
+  await testAccounts();
+
   const created = await post("/api/create", { name: "Smoke One" });
   const code = created.room.code;
   const players = [{ name: "Smoke One", token: created.token, seat: created.room.you }];
@@ -162,9 +193,13 @@ async function run() {
 }
 
 async function main() {
+  try {
+    fs.rmSync(DATA_FILE, { force: true });
+  } catch (error) {
+  }
   const child = spawn(process.execPath, ["server.js"], {
     cwd: process.cwd(),
-    env: { ...process.env, PORT },
+    env: { ...process.env, PORT, ARMS_WAR_DATA_FILE: DATA_FILE },
     stdio: ["ignore", "pipe", "pipe"]
   });
   let stderr = "";
@@ -181,6 +216,10 @@ async function main() {
 
   if (stderr.trim()) {
     console.warn(stderr.trim());
+  }
+  try {
+    fs.rmSync(DATA_FILE, { force: true });
+  } catch (error) {
   }
 }
 

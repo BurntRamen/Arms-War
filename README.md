@@ -39,18 +39,20 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the Render setup. This repo includes `ren
 - Plain Node server with no dependency install required.
 - Local API health check at `POST /api/health`.
 - Render deployment config in `render.yaml`.
-- Optional friends, messages, and leaderboard persistence with `ARMS_WAR_DATA_FILE`.
+- Saved accounts with hashed passwords, friends, direct friend messages, and leaderboard persistence.
 
-## Optional Social Persistence
+## Account Database
 
-By default, friends, messages, and leaderboard stats are in memory. To persist them to a writable file, start the app with `ARMS_WAR_DATA_FILE` set:
+Arms War saves account data in a JSON database file. By default, local development writes to `data/arms-war-db.json`, which is ignored by git.
+
+To choose a different writable file path, start the app with `ARMS_WAR_DATA_FILE` set:
 
 ```powershell
-$env:ARMS_WAR_DATA_FILE="C:\arms-war-data\social.json"
+$env:ARMS_WAR_DATA_FILE="C:\arms-war-data\arms-war-db.json"
 npm start
 ```
 
-On Render, this should point to a mounted persistent disk path. Active multiplayer rooms are still intentionally in memory for this prototype.
+On Render, this should point to a mounted persistent disk path. Active multiplayer rooms are still intentionally in memory for this prototype, but saved accounts, friends, messages, and leaderboard stats can persist.
 
 ## Implemented Rules
 

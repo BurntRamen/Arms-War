@@ -23,11 +23,11 @@ Vercel is excellent for static sites and frontend apps, but Arms War is currentl
 
 Active game rooms are stored in memory. They work while the server is running, but reset when the server restarts or redeploys. For a more permanent public version, add a database such as Supabase, Neon/Postgres, or Render Postgres.
 
-Friends, messages, and leaderboard data can now persist to a file if the server has a writable durable path. Set this environment variable:
+Saved accounts, friends, direct friend messages, and leaderboard data persist to a JSON database file. For public use on Render, mount a persistent disk and set this environment variable:
 
-- `ARMS_WAR_DATA_FILE`: full path to a JSON file, such as `/var/data/arms-war-social.json`
+- `ARMS_WAR_DATA_FILE`: full path to a JSON file, such as `/var/data/arms-war-db.json`
 
-On Render, use a persistent disk before relying on that file for public data. Without a persistent disk, the file can still disappear on redeploys.
+Without a persistent disk, account data can still disappear on redeploys. For a larger public release, Supabase, Neon/Postgres, or Render Postgres would be a stronger long-term database.
 
 ## Pre-Deploy Checks
 

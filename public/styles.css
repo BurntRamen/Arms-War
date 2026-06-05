@@ -483,6 +483,19 @@ select {
   gap: 7px;
 }
 
+.account-card {
+  align-content: start;
+}
+
+.account-controls {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+}
+
 .friend-list span {
   border-radius: 999px;
   background: #eefafa;

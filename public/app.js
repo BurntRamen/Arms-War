@@ -19,6 +19,9 @@ const state = {
   friendName: "",
   messageTo: "",
   messageText: "",
+  accountToken: localStorage.getItem("armswar_account_token") || "",
+  accountName: localStorage.getItem("armswar_account_name") || localStorage.getItem("waygate_name") || "",
+  accountPassword: "",
   musicEnabled: localStorage.getItem("armswar_music_enabled") !== "false",
   showOpponentAbilities: false
 };
@@ -441,16 +444,28 @@ async function socialApi(path, body = {}) {
     const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: state.name || "Guest", ...body })
+      body: JSON.stringify({ name: state.accountName || state.name || "Guest", accountToken: state.accountToken, ...body })
     });
     const payload = await response.json();
     if (!response.ok || payload.error) throw new Error(payload.error || "Request failed.");
+    if (payload.accountToken) {
+      state.accountToken = payload.accountToken;
+      localStorage.setItem("armswar_account_token", state.accountToken);
+    }
+    if (payload.profile?.name) {
+      state.accountName = payload.profile.name;
+      state.name = payload.profile.name;
+      localStorage.setItem("armswar_account_name", state.accountName);
+      localStorage.setItem("waygate_name", state.name);
+    }
     state.social = payload;
     state.error = "";
     render();
+    return true;
   } catch (error) {
     state.error = error.message;
     render();
+    return false;
   }
 }
 
@@ -532,6 +547,7 @@ function leaderboardPanel() {
 
 function friendsPanel() {
   const profile = state.social.profile;
+  const loggedIn = Boolean(state.accountToken && profile?.savedAccount);
   const friends = profile?.friends?.length ? profile.friends.map((name) => `<span>${name}</span>`).join("") : `<span>No friends yet</span>`;
   const messageOptions = [state.messageTo, ...(profile?.friends || [])]
     .filter(Boolean)
@@ -545,17 +561,26 @@ function friendsPanel() {
         .map((message) => `<div class="message-row"><strong>${message.from} to ${message.to}</strong><p>${message.text}</p></div>`)
         .join("")
     : `<div class="message-row"><p>No messages yet.</p></div>`;
-  return `<section class="menu-card">
-    <div class="menu-card-label">Friends</div>
+  return `<section class="menu-card account-card">
+    <div class="menu-card-label">Account</div>
     <h2>Friends & Messages</h2>
-    <p>Using profile: <strong>${state.name || "Guest"}</strong></p>
+    <p>${loggedIn ? `Logged in as <strong>${profile.name}</strong>` : "Create or log into an account to save friends, stats, and messages."}</p>
+    <div class="account-controls">
+      <label>Account name<input id="accountName" value="${state.accountName}" placeholder="Player name" autocomplete="username" /></label>
+      <label>Password<input id="accountPassword" value="${state.accountPassword}" type="password" placeholder="Password" autocomplete="current-password" /></label>
+      <div class="row">
+        <button data-action="register-account">Create Account</button>
+        <button class="secondary" data-action="login-account">Log In</button>
+        <button class="secondary" data-action="logout-account" ${loggedIn ? "" : "disabled"}>Log Out</button>
+      </div>
+    </div>
     <div class="friend-list">${friends}</div>
-    <label>Add friend<input id="friendName" value="${state.friendName}" placeholder="Friend name" autocomplete="off" /></label>
-    <button data-action="add-friend">Add Friend</button>
-    <label>Message to<input id="messageTo" list="friendOptions" value="${state.messageTo}" placeholder="Friend name" autocomplete="off" /></label>
+    <label>Add friend<input id="friendName" value="${state.friendName}" placeholder="Friend account name" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
+    <button data-action="add-friend" ${loggedIn ? "" : "disabled"}>Add Friend</button>
+    <label>Message to<input id="messageTo" list="friendOptions" value="${state.messageTo}" placeholder="Friend name" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
     <datalist id="friendOptions">${messageOptions}</datalist>
-    <label>Message<input id="messageText" value="${state.messageText}" placeholder="Type a message" autocomplete="off" /></label>
-    <button data-action="send-message">Send Message</button>
+    <label>Message<input id="messageText" value="${state.messageText}" placeholder="Type a message" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
+    <button data-action="send-message" ${loggedIn ? "" : "disabled"}>Send Message</button>
     <div class="message-list">${messageRows}</div>
   </section>`;
 }
@@ -1024,6 +1049,11 @@ app.addEventListener("input", (event) => {
   if (event.target.id === "friendName") state.friendName = event.target.value;
   if (event.target.id === "messageTo") state.messageTo = event.target.value;
   if (event.target.id === "messageText") state.messageText = event.target.value;
+  if (event.target.id === "accountName") {
+    state.accountName = event.target.value;
+    localStorage.setItem("armswar_account_name", state.accountName);
+  }
+  if (event.target.id === "accountPassword") state.accountPassword = event.target.value;
 });
 
 app.addEventListener("click", async (event) => {
@@ -1041,6 +1071,29 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "create") return act("/api/create", { name: state.name || "Player 1" });
   if (action === "join") return act("/api/join", { code: state.joinCode, token: "", name: state.name || "Player" });
+  if (action === "register-account") {
+    const ok = await socialApi("/api/register", { name: state.accountName || state.name, password: state.accountPassword });
+    if (!ok) return;
+    state.accountPassword = "";
+    showToast("Account saved.");
+    return render();
+  }
+  if (action === "login-account") {
+    const ok = await socialApi("/api/login", { name: state.accountName || state.name, password: state.accountPassword });
+    if (!ok) return;
+    state.accountPassword = "";
+    showToast("Logged in.");
+    return render();
+  }
+  if (action === "logout-account") {
+    const ok = await socialApi("/api/logout");
+    if (!ok) return;
+    localStorage.removeItem("armswar_account_token");
+    state.accountToken = "";
+    state.accountPassword = "";
+    showToast("Logged out.");
+    return render();
+  }
   if (action === "add-friend") {
     const friendName = state.friendName;
     state.friendName = "";

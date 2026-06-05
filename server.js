@@ -8,12 +8,13 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const STARTING_GOLD = 10;
 const MAX_FIGHT_BET = 5;
 const MAX_PLAYERS = 4;
-const SOCIAL_DATA_FILE = process.env.ARMS_WAR_DATA_FILE || "";
+const SOCIAL_DATA_FILE = process.env.ARMS_WAR_DATA_FILE || path.join(__dirname, "data", "arms-war-db.json");
 
 const rooms = new Map();
 const profiles = new Map();
 const messages = [];
 const roomStreams = new Map();
+const sessions = new Map();
 
 const FACTIONS = {
   rumin: {
@@ -86,19 +87,56 @@ function profileKey(name) {
   return normalizeName(name).toLowerCase();
 }
 
-function getProfile(name) {
+function normalizePassword(password) {
+  return String(password || "").trim();
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = crypto.pbkdf2Sync(normalizePassword(password), salt, 120000, 32, "sha256").toString("hex");
+  return { salt, hash };
+}
+
+function passwordMatches(profile, password) {
+  if (!profile?.passwordHash || !profile?.passwordSalt) return false;
+  const attempt = hashPassword(password, profile.passwordSalt);
+  return crypto.timingSafeEqual(Buffer.from(profile.passwordHash, "hex"), Buffer.from(attempt.hash, "hex"));
+}
+
+function issueSession(profile) {
+  const token = id("acct_");
+  profile.sessions.add(token);
+  sessions.set(token, profileKey(profile.name));
+  return token;
+}
+
+function getSessionProfile(token) {
+  const key = sessions.get(String(token || ""));
+  return key ? profiles.get(key) || null : null;
+}
+
+function getProfile(name, options = {}) {
   const displayName = normalizeName(name);
   const key = profileKey(displayName);
   if (!profiles.has(key)) {
+    if (options.existingOnly) return null;
     profiles.set(key, {
       name: displayName,
       wins: 0,
       games: 0,
-      friends: new Set()
+      friends: new Set(),
+      sessions: new Set(),
+      passwordSalt: "",
+      passwordHash: ""
     });
   }
   const profile = profiles.get(key);
   if (profile.name !== displayName) profile.name = displayName;
+  return profile;
+}
+
+function requireAccount(body) {
+  const profile = getSessionProfile(body.accountToken);
+  if (!profile) throw new Error("Please log in first.");
   return profile;
 }
 
@@ -107,7 +145,8 @@ function serializeProfile(profile) {
     name: profile.name,
     wins: profile.wins,
     games: profile.games,
-    friends: [...profile.friends].map((friendKey) => profiles.get(friendKey)?.name || friendKey)
+    friends: [...profile.friends].map((friendKey) => profiles.get(friendKey)?.name || friendKey),
+    savedAccount: Boolean(profile.passwordHash)
   };
 }
 
@@ -121,9 +160,13 @@ function loadSocialData() {
         name: normalizeName(item.name),
         wins: Number(item.wins) || 0,
         games: Number(item.games) || 0,
-        friends: new Set((item.friends || []).map(profileKey))
+        friends: new Set((item.friends || []).map(profileKey)),
+        sessions: new Set((item.sessions || []).map(String)),
+        passwordSalt: String(item.passwordSalt || ""),
+        passwordHash: String(item.passwordHash || "")
       };
       profiles.set(profileKey(profile.name), profile);
+      for (const token of profile.sessions) sessions.set(token, profileKey(profile.name));
     }
     for (const message of saved.messages || []) {
       if (!message.from || !message.to || !message.text) continue;
@@ -151,7 +194,10 @@ function saveSocialData() {
         name: profile.name,
         wins: profile.wins,
         games: profile.games,
-        friends: [...profile.friends]
+        friends: [...profile.friends],
+        sessions: [...profile.sessions],
+        passwordSalt: profile.passwordSalt,
+        passwordHash: profile.passwordHash
       })),
       messages
     };
@@ -199,6 +245,46 @@ function getSocialPayload(name) {
       })
       .slice(-40)
   };
+}
+
+function getSocialPayloadForRequest(body) {
+  const account = getSessionProfile(body.accountToken);
+  return getSocialPayload(account?.name || body.name);
+}
+
+function registerAccount(body) {
+  const name = normalizeName(body.name);
+  const password = normalizePassword(body.password);
+  if (name.toLowerCase() === "guest") throw new Error("Choose a name other than Guest.");
+  if (password.length < 4) throw new Error("Use at least 4 characters for your password.");
+  const existing = getProfile(name, { existingOnly: true });
+  if (existing?.passwordHash) throw new Error("That account name is already saved. Log in instead.");
+  const profile = existing || getProfile(name);
+  const passwordData = hashPassword(password);
+  profile.passwordSalt = passwordData.salt;
+  profile.passwordHash = passwordData.hash;
+  const accountToken = issueSession(profile);
+  saveSocialData();
+  return { accountToken, ...getSocialPayload(profile.name) };
+}
+
+function loginAccount(body) {
+  const profile = getProfile(body.name, { existingOnly: true });
+  if (!profile?.passwordHash || !passwordMatches(profile, body.password)) {
+    throw new Error("Account name or password is incorrect.");
+  }
+  const accountToken = issueSession(profile);
+  saveSocialData();
+  return { accountToken, ...getSocialPayload(profile.name) };
+}
+
+function logoutAccount(body) {
+  const token = String(body.accountToken || "");
+  const profile = getSessionProfile(token);
+  if (profile) profile.sessions.delete(token);
+  sessions.delete(token);
+  saveSocialData();
+  return getSocialPayload(body.name);
 }
 
 function roomCode() {
@@ -1174,12 +1260,22 @@ async function handleApi(req, res) {
     if (req.url === "/api/health" && req.method === "POST") {
       return sendJson(res, 200, { ok: true, name: "Arms War", rooms: rooms.size });
     }
+    if (req.url === "/api/register" && req.method === "POST") {
+      return sendJson(res, 200, registerAccount(body));
+    }
+    if (req.url === "/api/login" && req.method === "POST") {
+      return sendJson(res, 200, loginAccount(body));
+    }
+    if (req.url === "/api/logout" && req.method === "POST") {
+      return sendJson(res, 200, logoutAccount(body));
+    }
     if (req.url === "/api/social" && req.method === "POST") {
-      return sendJson(res, 200, getSocialPayload(body.name));
+      return sendJson(res, 200, getSocialPayloadForRequest(body));
     }
     if (req.url === "/api/add-friend" && req.method === "POST") {
-      const profile = getProfile(body.name);
-      const friend = getProfile(body.friendName);
+      const profile = requireAccount(body);
+      const friend = getProfile(body.friendName, { existingOnly: true });
+      if (!friend?.passwordHash) throw new Error("That friend needs to create an account first.");
       if (profileKey(profile.name) === profileKey(friend.name)) throw new Error("You cannot add yourself.");
       profile.friends.add(profileKey(friend.name));
       friend.friends.add(profileKey(profile.name));
@@ -1187,8 +1283,10 @@ async function handleApi(req, res) {
       return sendJson(res, 200, getSocialPayload(profile.name));
     }
     if (req.url === "/api/send-message" && req.method === "POST") {
-      const from = getProfile(body.name);
-      const to = getProfile(body.to);
+      const from = requireAccount(body);
+      const to = getProfile(body.to, { existingOnly: true });
+      if (!to?.passwordHash) throw new Error("That player needs to create an account first.");
+      if (!from.friends.has(profileKey(to.name))) throw new Error("You can only message friends.");
       const text = String(body.text || "").trim().slice(0, 240);
       if (!text) throw new Error("Write a message first.");
       messages.push({
