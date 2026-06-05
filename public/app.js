@@ -180,6 +180,16 @@ function menuStartSteps() {
   </section>`;
 }
 
+function qrCodeCard() {
+  return `<div class="menu-card qr-menu-card">
+    <div class="menu-card-label">Share</div>
+    <h2>Website QR Code</h2>
+    <p>Scan this to open Arms War on another device.</p>
+    <img class="qr-code" src="/assets/arms-war-qr-code.png" alt="QR code for the Arms War website" />
+    <a class="site-link" href="https://arms-war.onrender.com" target="_blank" rel="noreferrer">arms-war.onrender.com</a>
+  </div>`;
+}
+
 function musicButton() {
   return `<button class="secondary music-button" data-action="toggle-music">${state.musicEnabled ? "Turn Music Off" : "Turn Music On"}</button>`;
 }
@@ -687,6 +697,7 @@ function menu() {
         <label>Room code<input id="joinCode" value="${state.joinCode}" placeholder="ABC123" maxlength="6" autocomplete="off" /></label>
         <button data-action="join">Join Table</button>
       </div>
+      ${qrCodeCard()}
     </section>
     ${menuStartSteps()}
     <section class="menu-dashboard">

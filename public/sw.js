@@ -1,4 +1,4 @@
-const CACHE_NAME = "arms-war-app-v9";
+const CACHE_NAME = "arms-war-app-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "/app.js",
   "/manifest.json",
   "/icon.svg",
+  "/assets/arms-war-qr-code.png",
   "/assets/factions/rumin-commander.jpg",
   "/assets/factions/rumin-city.jpg",
   "/assets/factions/sheen-commander.jpg",
