@@ -152,10 +152,13 @@ async function run() {
   const responders = players.filter((player) => player.seat !== active.seat);
 
   await post("/api/bet", { code, token: active.token, betAction: "bet", amount: 1 });
-  await post("/api/bet", { code, token: responders[0].token, betAction: "bet", amount: 3 });
+  room = (await post("/api/bet", { code, token: responders[0].token, betAction: "bet", amount: 5 })).room;
+  if (room.fight.currentBet !== 5) {
+    throw new Error(`Expected fight wager to increase to 5, got ${room.fight.currentBet}.`);
+  }
   await post("/api/bet", { code, token: responders[1].token, betAction: "concede" });
-  await post("/api/bet", { code, token: responders[2].token, betAction: "bet", amount: 3 });
-  room = (await post("/api/bet", { code, token: active.token, betAction: "bet", amount: 3 })).room;
+  await post("/api/bet", { code, token: responders[2].token, betAction: "bet", amount: 5 });
+  room = (await post("/api/bet", { code, token: active.token, betAction: "bet", amount: 5 })).room;
 
   if (room.phase !== "fightPlace") {
     throw new Error(`Expected fightPlace after matched wagers, got ${room.phase}.`);

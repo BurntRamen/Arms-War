@@ -439,7 +439,17 @@ async function act(path, body = {}) {
   }
 }
 
-async function socialApi(path, body = {}) {
+function isEditingText() {
+  const active = document.activeElement;
+  if (!active) return false;
+  return ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+}
+
+function shouldRenderAfterBackgroundUpdate(options) {
+  return !options.background || !isEditingText();
+}
+
+async function socialApi(path, body = {}, options = {}) {
   try {
     const response = await fetch(path, {
       method: "POST",
@@ -460,11 +470,11 @@ async function socialApi(path, body = {}) {
     }
     state.social = payload;
     state.error = "";
-    render();
+    if (shouldRenderAfterBackgroundUpdate(options)) render();
     return true;
   } catch (error) {
     state.error = error.message;
-    render();
+    if (shouldRenderAfterBackgroundUpdate(options)) render();
     return false;
   }
 }
@@ -477,7 +487,7 @@ function showToast(text) {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     state.toast = null;
-    render();
+    if (!isEditingText()) render();
   }, 4500);
 }
 
@@ -1207,7 +1217,7 @@ setInterval(() => {
   if (state.room && state.roomCode && !roomStream) {
     api("/api/state", { code: state.roomCode, token: state.token }).catch(() => {});
   } else if (!state.room) {
-    socialApi("/api/social").catch(() => {});
+    socialApi("/api/social", {}, { background: true }).catch(() => {});
   }
 }, 4000);
 
