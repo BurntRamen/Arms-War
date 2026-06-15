@@ -80,7 +80,7 @@ function id(prefix = "") {
 }
 
 function normalizeName(name) {
-  return String(name || "Guest").trim().slice(0, 24) || "Guest";
+  return String(name || "Guest").replace(/[<>]/g, "").trim().slice(0, 24) || "Guest";
 }
 
 function profileKey(name) {
@@ -99,7 +99,9 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
 function passwordMatches(profile, password) {
   if (!profile?.passwordHash || !profile?.passwordSalt) return false;
   const attempt = hashPassword(password, profile.passwordSalt);
-  return crypto.timingSafeEqual(Buffer.from(profile.passwordHash, "hex"), Buffer.from(attempt.hash, "hex"));
+  const saved = Buffer.from(profile.passwordHash, "hex");
+  const submitted = Buffer.from(attempt.hash, "hex");
+  return saved.length === submitted.length && crypto.timingSafeEqual(saved, submitted);
 }
 
 function issueSession(profile) {
@@ -536,6 +538,14 @@ function resetTemporaryChoices(room) {
   room.fight = null;
 }
 
+function returnFightCards(player) {
+  const cards = [...(player.fightLanes || []), ...(player.fightCards || [])].filter(Boolean);
+  for (const card of cards) card.tempBuff = 0;
+  putBottom(player.sideDeck, cards);
+  player.fightCards = [];
+  player.fightLanes = [null, null, null];
+}
+
 function startGame(room) {
   const players = livePlayers(room);
   if (players.length < 2) {
@@ -595,9 +605,15 @@ function beginCraft(room) {
   room.selectedAction = "craft";
   for (const player of livePlayers(room)) {
     player.peek = drawTop(player.sideDeck, Math.min(3, player.sideDeck.length));
-    room.pending[player.seat] = true;
+    if (player.peek.length) {
+      room.pending[player.seat] = true;
+    } else {
+      player.peek = null;
+      log(room, `${player.name} had no side-deck cards to craft with.`);
+    }
   }
   log(room, "Craft started. Each player chooses one side-deck card for the top of their main deck.");
+  completeSharedDeckAction(room);
 }
 
 function beginBurn(room) {
@@ -605,9 +621,15 @@ function beginBurn(room) {
   room.selectedAction = "burn";
   for (const player of livePlayers(room)) {
     player.peek = drawTop(player.mainDeck, Math.min(3, player.mainDeck.length));
-    room.pending[player.seat] = true;
+    if (player.peek.length) {
+      room.pending[player.seat] = true;
+    } else {
+      player.peek = null;
+      log(room, `${player.name} had no main-deck cards to burn.`);
+    }
   }
   log(room, "Burn started. Each player chooses one main-deck card for the bottom of their side deck.");
+  completeSharedDeckAction(room);
 }
 
 function completeSharedDeckAction(room) {
@@ -615,6 +637,7 @@ function completeSharedDeckAction(room) {
 }
 
 function choosePeekCard(room, player, cardId) {
+  if (!Array.isArray(player.peek) || !player.peek.length) throw new Error("You have no revealed cards to choose from.");
   const chosenIndex = player.peek.findIndex((card) => card.id === cardId);
   if (chosenIndex < 0) throw new Error("Choose one of your revealed cards.");
   const [chosen] = player.peek.splice(chosenIndex, 1);
@@ -859,9 +882,18 @@ function betFight(room, player, action, amount) {
 
   const activePlayers = livePlayers(room).filter((p) => !p.fightConceded);
   if (activePlayers.length === 1) {
-    activePlayers[0].technologies += 1;
-    const summary = `${activePlayers[0].name} wins the fight by concession and gains a technology.`;
+    const winner = activePlayers[0];
+    const triggersEvent = winner.technologies >= 3;
+    if (!triggersEvent) winner.technologies += 1;
+    const summary = triggersEvent
+      ? `${winner.name} wins the fight by concession and already has 3 technologies, so an event triggers.`
+      : `${winner.name} wins the fight by concession and gains a technology.`;
     announce(room, summary);
+    for (const p of livePlayers(room)) returnFightCards(p);
+    if (triggersEvent) {
+      resolveEvent(room);
+      return;
+    }
     nextTurn(room);
     room.notice = summary;
     room.noticeId = (room.noticeId || 0) + 1;
@@ -1099,25 +1131,32 @@ function prepareFightResults(room) {
 
 function finalizeFightResults(room) {
   if (!room.fight?.results) throw new Error("Fight results are not ready.");
-  const participants = livePlayers(room).filter((p) => !p.fightConceded);
   const winners = room.fight.results.winners;
   const laneNotes = room.fight.results.lanes.map((lane) =>
     `Lane ${lane.lane + 1}: ${lane.cards.map((x) => `P${x.seat} ${cardLabel(x.card)} (${x.value}${x.notes.length ? `; ${x.notes.join(", ")}` : ""})`).join(" vs ")}`
   );
   splitGold(room, winners, room.fight.pot);
-  for (const player of participants) {
-    player.fightLanes.forEach((card) => {
-      if (card) card.tempBuff = 0;
-    });
-    putBottom(player.sideDeck, player.fightLanes);
-  }
+  for (const player of livePlayers(room)) returnFightCards(player);
+
+  const techWinners = [];
+  const eventWinners = [];
   for (const seat of winners) {
     const player = room.players[seat];
     if (player.technologies >= 3) {
-      resolveEvent(room);
-      return;
+      eventWinners.push(seat);
+    } else {
+      player.technologies += 1;
+      techWinners.push(seat);
     }
-    player.technologies += 1;
+  }
+  if (eventWinners.length) {
+    const techText = techWinners.length
+      ? `${techWinners.map((seat) => room.players[seat].name).join(" and ")} gained technology.`
+      : "No winner gained technology.";
+    const summary = `${laneNotes.join(" | ")}. ${winners.map((seat) => room.players[seat].name).join(" and ")} won the fight. ${techText} ${eventWinners.map((seat) => room.players[seat].name).join(" and ")} already had 3 technologies and triggered an event.`;
+    announce(room, summary);
+    resolveEvent(room);
+    return;
   }
   const summary = `${laneNotes.join(" | ")}. ${winners.map((seat) => room.players[seat].name).join(" and ")} won the fight and gained technology.`;
   announce(room, summary);

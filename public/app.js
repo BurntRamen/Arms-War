@@ -36,6 +36,16 @@ let activeMusicTheme = "";
 let roomStream = null;
 let roomStreamKey = "";
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
 const MENU_FACTIONS = [
   {
     id: "rumin",
@@ -117,10 +127,30 @@ const MUSIC_THEMES = {
 };
 
 const MUSIC_TRACKS = {
-  rumin: ["/assets/music/rumin-theme-1.mp3", "/assets/music/rumin-theme-2.mp3"],
-  sheen: ["/assets/music/sheen-theme-1.mp3", "/assets/music/sheen-theme-2.mp3"],
-  frumo: ["/assets/music/frumo-theme-1.mp3", "/assets/music/frumo-theme-2.mp3"],
-  bizi: ["/assets/music/bizi-theme-1.mp3"]
+  rumin: [
+    "/assets/music/rumin-theme-1.mp3",
+    "/assets/music/rumin-theme-2.mp3",
+    "/assets/music/rumin-theme-3.mp3",
+    "/assets/music/rumin-theme-4.mp3"
+  ],
+  sheen: [
+    "/assets/music/sheen-theme-1.mp3",
+    "/assets/music/sheen-theme-2.mp3",
+    "/assets/music/sheen-theme-3.mp3",
+    "/assets/music/sheen-theme-4.mp3"
+  ],
+  frumo: [
+    "/assets/music/frumo-theme-1.mp3",
+    "/assets/music/frumo-theme-2.mp3",
+    "/assets/music/frumo-theme-3.mp3",
+    "/assets/music/frumo-theme-4.mp3"
+  ],
+  bizi: [
+    "/assets/music/bizi-theme-1.mp3",
+    "/assets/music/bizi-theme-2.mp3",
+    "/assets/music/bizi-theme-3.mp3",
+    "/assets/music/bizi-theme-4.mp3"
+  ]
 };
 
 function suitSymbol(suit) {
@@ -219,7 +249,7 @@ function remainingReadyPlayers(room, me) {
 
 function playerLabel(player) {
   if (!player) return "Open seat";
-  return `P${player.seat}${player.name ? ` ${player.name}` : ""}`;
+  return `P${player.seat}${player.name ? ` ${escapeHtml(player.name)}` : ""}`;
 }
 
 function listLabels(players) {
@@ -542,7 +572,7 @@ function eventReferencePanel() {
 function leaderboardPanel() {
   const rows = state.social.leaderboard.length
     ? state.social.leaderboard
-        .map((entry, index) => `<tr><td>${index + 1}</td><td>${entry.name}</td><td>${entry.wins}</td><td>${entry.games}</td><td>${entry.winRate}%</td></tr>`)
+        .map((entry, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(entry.name)}</td><td>${entry.wins}</td><td>${entry.games}</td><td>${entry.winRate}%</td></tr>`)
         .join("")
     : `<tr><td colspan="5">No completed games yet.</td></tr>`;
   return `<section class="menu-card">
@@ -558,26 +588,26 @@ function leaderboardPanel() {
 function friendsPanel() {
   const profile = state.social.profile;
   const loggedIn = Boolean(state.accountToken && profile?.savedAccount);
-  const friends = profile?.friends?.length ? profile.friends.map((name) => `<span>${name}</span>`).join("") : `<span>No friends yet</span>`;
+  const friends = profile?.friends?.length ? profile.friends.map((name) => `<span>${escapeHtml(name)}</span>`).join("") : `<span>No friends yet</span>`;
   const messageOptions = [state.messageTo, ...(profile?.friends || [])]
     .filter(Boolean)
     .filter((name, index, list) => list.indexOf(name) === index)
-    .map((name) => `<option value="${name}" ${state.messageTo === name ? "selected" : ""}>${name}</option>`)
+    .map((name) => `<option value="${escapeHtml(name)}" ${state.messageTo === name ? "selected" : ""}>${escapeHtml(name)}</option>`)
     .join("");
   const messageRows = state.social.messages.length
     ? state.social.messages
         .slice()
         .reverse()
-        .map((message) => `<div class="message-row"><strong>${message.from} to ${message.to}</strong><p>${message.text}</p></div>`)
+        .map((message) => `<div class="message-row"><strong>${escapeHtml(message.from)} to ${escapeHtml(message.to)}</strong><p>${escapeHtml(message.text)}</p></div>`)
         .join("")
     : `<div class="message-row"><p>No messages yet.</p></div>`;
   return `<section class="menu-card account-card">
     <div class="menu-card-label">Account</div>
     <h2>Friends & Messages</h2>
-    <p>${loggedIn ? `Logged in as <strong>${profile.name}</strong>` : "Create or log into an account to save friends, stats, and messages."}</p>
+    <p>${loggedIn ? `Logged in as <strong>${escapeHtml(profile.name)}</strong>` : "Create or log into an account to save friends, stats, and messages."}</p>
     <div class="account-controls">
-      <label>Account name<input id="accountName" value="${state.accountName}" placeholder="Player name" autocomplete="username" /></label>
-      <label>Password<input id="accountPassword" value="${state.accountPassword}" type="password" placeholder="Password" autocomplete="current-password" /></label>
+      <label>Account name<input id="accountName" value="${escapeHtml(state.accountName)}" placeholder="Player name" autocomplete="username" /></label>
+      <label>Password<input id="accountPassword" value="${escapeHtml(state.accountPassword)}" type="password" placeholder="Password" autocomplete="current-password" /></label>
       <div class="row">
         <button data-action="register-account">Create Account</button>
         <button class="secondary" data-action="login-account">Log In</button>
@@ -585,11 +615,11 @@ function friendsPanel() {
       </div>
     </div>
     <div class="friend-list">${friends}</div>
-    <label>Add friend<input id="friendName" value="${state.friendName}" placeholder="Friend account name" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
+    <label>Add friend<input id="friendName" value="${escapeHtml(state.friendName)}" placeholder="Friend account name" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
     <button data-action="add-friend" ${loggedIn ? "" : "disabled"}>Add Friend</button>
-    <label>Message to<input id="messageTo" list="friendOptions" value="${state.messageTo}" placeholder="Friend name" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
+    <label>Message to<input id="messageTo" list="friendOptions" value="${escapeHtml(state.messageTo)}" placeholder="Friend name" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
     <datalist id="friendOptions">${messageOptions}</datalist>
-    <label>Message<input id="messageText" value="${state.messageText}" placeholder="Type a message" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
+    <label>Message<input id="messageText" value="${escapeHtml(state.messageText)}" placeholder="Type a message" autocomplete="off" ${loggedIn ? "" : "disabled"} /></label>
     <button data-action="send-message" ${loggedIn ? "" : "disabled"}>Send Message</button>
     <div class="message-list">${messageRows}</div>
   </section>`;
@@ -626,13 +656,13 @@ function lobbySeatCards(room) {
           ? "Open Seat"
           : player.readyToStart
             ? "Ready"
-            : player.faction
-              ? "Choosing Start"
-              : "Choosing Faction";
+          : player.faction
+            ? "Choosing Start"
+            : "Choosing Faction";
         return `<div class="seat-card ${isYou ? "you" : ""} ${player ? "occupied" : "open"}">
           <div class="seat-topline"><span>P${seat}</span><strong>${status}</strong></div>
-          <h3>${player ? player.name : "Waiting for player"}</h3>
-          <p>${player?.faction?.name || "No faction yet"}</p>
+          <h3>${player ? escapeHtml(player.name) : "Waiting for player"}</h3>
+          <p>${escapeHtml(player?.faction?.name || "No faction yet")}</p>
         </div>`;
       })
       .join("")}
@@ -680,7 +710,7 @@ function opponentAbilitiesPanel(room) {
     ${opponents
       .map(
         (player) => `<article class="ability-card">
-          <div class="ability-owner">P${player.seat} ${player.name} | ${player.faction.name}</div>
+          <div class="ability-owner">P${player.seat} ${escapeHtml(player.name)} | ${escapeHtml(player.faction.name)}</div>
           <div class="ability-feature">
             <img src="${player.faction.commander.image}" alt="${player.faction.commander.name}" />
             <div><strong>${player.faction.commander.name}</strong><p>${player.faction.commander.text}</p></div>
@@ -702,7 +732,7 @@ function paymentTrailPanel(room) {
     <h3>Wagers & Reveals</h3>
     ${entries
       .slice(-8)
-      .map((entry) => `<div class="payment-row"><strong>P${entry.seat}</strong><span>${entry.label || entry.type}</span>${entry.card ? `<em>${cardLabel(entry.card)}</em>` : ""}</div>`)
+      .map((entry) => `<div class="payment-row"><strong>P${entry.seat}</strong><span>${escapeHtml(entry.label || entry.type)}</span>${entry.card ? `<em>${cardLabel(entry.card)}</em>` : ""}</div>`)
       .join("")}
   </section>`;
 }
@@ -715,21 +745,21 @@ function menu() {
       <h1 class="brand">Arms War</h1>
       <p class="subtitle">Create or join a multiplayer table. Faction selection happens after you enter the lobby.</p>
     </section>
-    ${state.error ? `<div class="error">${state.error}</div>` : ""}
+    ${state.error ? `<div class="error">${escapeHtml(state.error)}</div>` : ""}
     <section class="menu-grid">
       <div class="menu-card primary-menu-card">
         <div class="menu-card-label">Host</div>
         <h2>Create Table</h2>
         <p>Start a live match for 2-4 players, then send everyone the room code or invite link.</p>
-        <label>Your name<input id="name" value="${state.name}" placeholder="Player name" autocomplete="nickname" /></label>
+        <label>Your name<input id="name" value="${escapeHtml(state.name)}" placeholder="Player name" autocomplete="nickname" /></label>
         <button data-action="create">Create Table</button>
       </div>
       <div class="menu-card">
         <div class="menu-card-label">Guest</div>
         <h2>Join Table</h2>
         <p>Enter an existing room code to take the next open seat. Room links fill this in automatically.</p>
-        <label>Your name<input id="joinName" value="${state.name}" placeholder="Player name" autocomplete="nickname" /></label>
-        <label>Room code<input id="joinCode" value="${state.joinCode}" placeholder="ABC123" maxlength="6" autocomplete="off" /></label>
+        <label>Your name<input id="joinName" value="${escapeHtml(state.name)}" placeholder="Player name" autocomplete="nickname" /></label>
+        <label>Room code<input id="joinCode" value="${escapeHtml(state.joinCode)}" placeholder="ABC123" maxlength="6" autocomplete="off" /></label>
         <button data-action="join">Join Table</button>
       </div>
       ${qrCodeCard()}
@@ -752,8 +782,8 @@ function playerPanel(player) {
     ? `<div class="mini-hand"><span>Your fight hand</span><div class="mini-cards">${player.fightCards.map((card) => cardView(card)).join("")}</div></div>`
     : "";
   return `<div class="player ${you ? "you" : ""} ${active ? "active-player" : ""} player-${player.factionId || "neutral"}">
-    <h3>P${player.seat}: ${player.name}${you ? " (You)" : ""}</h3>
-    <div>${player.faction ? player.faction.name : "No faction"} | ${player.connected ? "Connected" : "Disconnected"}${player.readyToStart ? " | Ready" : ""}${player.fightConceded ? " | Conceded fight" : ""}</div>
+    <h3>P${player.seat}: ${escapeHtml(player.name)}${you ? " (You)" : ""}</h3>
+    <div>${escapeHtml(player.faction ? player.faction.name : "No faction")} | ${player.connected ? "Connected" : "Disconnected"}${player.readyToStart ? " | Ready" : ""}${player.fightConceded ? " | Conceded fight" : ""}</div>
     <div class="metrics">
       <div class="metric"><span>Gold</span><strong>${player.gold}</strong></div>
       <div class="metric"><span>Tech</span><strong>${player.technologies}</strong></div>
@@ -951,7 +981,7 @@ function lobbySetupArea(room) {
         <div><strong>3</strong><span>Everyone presses Start Game when ready.</span></div>
       </div>
       <h3>Lobby Log</h3>
-      <div class="log compact-log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
+      <div class="log compact-log">${room.log.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
     </section>
     <aside class="panel lobby-action-panel">
       <h2>Choose Faction</h2>
@@ -970,7 +1000,7 @@ function lobbySetupArea(room) {
 function lobbyScreen() {
   const room = state.room;
   return `<div class="page lobby-page theme-${factionThemeId()}"><main class="shell lobby-shell">
-    ${state.toast ? `<div class="toast" data-action="dismiss-toast">${state.toast.text}</div>` : ""}
+    ${state.toast ? `<div class="toast" data-action="dismiss-toast">${escapeHtml(state.toast.text)}</div>` : ""}
     <section class="lobby-header">
       <div>
         <span class="eyebrow">Table Lobby</span>
@@ -983,7 +1013,7 @@ function lobbyScreen() {
         <button class="secondary" data-action="leave">Leave</button>
       </div>
     </section>
-    ${state.error ? `<div class="error">${state.error}</div>` : ""}
+    ${state.error ? `<div class="error">${escapeHtml(state.error)}</div>` : ""}
     ${lobbyInvitePanel(room)}
     ${lobbySeatCards(room)}
     ${opponentAbilitiesPanel(room)}
@@ -996,12 +1026,12 @@ function game() {
   const fightActive = ["fightBet", "fightPlace", "fightAbility", "fightResults"].includes(room.phase);
   const activePlayer = room.players[room.activePlayer];
   const turnSpotlight = room.phase !== "lobby" && activePlayer ? `<section class="turn-spotlight">
-    <span>Current Turn</span><strong>Player ${activePlayer.seat}: ${activePlayer.name}</strong>
+    <span>Current Turn</span><strong>Player ${activePlayer.seat}: ${escapeHtml(activePlayer.name)}</strong>
   </section>` : "";
   const playArea = `<section class="game-grid ${fightActive ? "fight-game-grid" : ""}">
       <div class="panel table-panel">
         <h2>Table</h2>
-        <p class="table-message">${room.message}</p>
+        <p class="table-message">${escapeHtml(room.message)}</p>
         ${fightBoard()}
       </div>
       <aside class="panel action-panel ${fightActive ? "fight-action-panel" : ""}">
@@ -1009,11 +1039,11 @@ function game() {
         ${controls()}
         ${paymentTrailPanel(room)}
         <h2 style="margin-top:18px">Log</h2>
-        <div class="log">${room.log.map((line) => `<div>${line}</div>`).join("")}</div>
+        <div class="log">${room.log.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
       </aside>
     </section>`;
   return `<div class="page game-page theme-${factionThemeId()} ${fightActive ? "fight-active" : ""}"><main class="shell game-shell">
-    ${state.toast ? `<div class="toast" data-action="dismiss-toast">${state.toast.text}</div>` : ""}
+    ${state.toast ? `<div class="toast" data-action="dismiss-toast">${escapeHtml(state.toast.text)}</div>` : ""}
     <section class="topbar game-topbar">
       <div>
         <h1 class="brand">Arms War</h1>
@@ -1026,7 +1056,7 @@ function game() {
         <button class="secondary" data-action="leave">Leave</button>
       </div>
     </section>
-    ${state.error ? `<div class="error">${state.error}</div>` : ""}
+    ${state.error ? `<div class="error">${escapeHtml(state.error)}</div>` : ""}
     <section class="status game-status">
       <div class="pill"><span>Turn</span><strong>${room.turn || "Lobby"}</strong></div>
       <div class="pill"><span>Phase</span><strong>${room.phase}</strong></div>

@@ -191,6 +191,14 @@ async function run() {
   if (room.phase !== "turnStart" && room.phase !== "gameOver") {
     throw new Error(`Expected the fight to finish, got ${room.phase}.`);
   }
+  for (const player of players) {
+    const viewerRoom = await state(code, player.token);
+    const seatState = viewerRoom.players[player.seat];
+    const cardTotal = seatState.mainDeckCount + seatState.sideDeckCount + seatState.fightCards.length + seatState.fightLanes.filter(Boolean).length;
+    if (cardTotal !== 52) {
+      throw new Error(`Player ${player.seat} should still have 52 cards after the fight, got ${cardTotal}.`);
+    }
+  }
 
   console.log(`Smoke test passed: ${code} reached ${room.phase} with ${players.length} players.`);
 }
