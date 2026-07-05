@@ -118,8 +118,51 @@ async function testAccounts() {
   }
 }
 
+async function testCampaignMode() {
+  const created = await post("/api/create-campaign", {
+    name: "Campaign Smoke",
+    factionId: "rumin",
+    chapterId: "brothers-of-rumie"
+  });
+  if (!created.token) throw new Error("Campaign creation did not return a player token.");
+  if (!created.room?.campaign) throw new Error("Campaign room did not include campaign details.");
+  if (!created.room.players[2]?.isBot) throw new Error("Campaign opponent was not marked as a bot.");
+  if (created.room.players[2]?.factionId !== "frumo") {
+    throw new Error("Campaign opponent faction did not match the chapter.");
+  }
+
+  let room = created.room;
+  for (let step = 0; step < 40 && room.phase !== "gameOver"; step += 1) {
+    const me = room.players[room.you];
+    if (room.phase === "turnStart" && room.activePlayer === room.you) {
+      room = (await post("/api/roll-action", { code: room.code, token: created.token })).room;
+    } else if (room.phase === "chooseAction" && room.activePlayer === room.you) {
+      const action = room.actionChoices.includes("fight") ? "fight" : room.actionChoices[0];
+      room = (await post("/api/select-action", { code: room.code, token: created.token, action })).room;
+    } else if ((room.phase === "craft" || room.phase === "burn") && me.peek?.length) {
+      room = (await post("/api/choose-peek", { code: room.code, token: created.token, cardId: me.peek[0].id })).room;
+    } else if (room.phase === "fightBet") {
+      const amount = Math.max(1, Math.min(5, me.gold, room.fight.currentBet || 1));
+      room = (await post("/api/bet", { code: room.code, token: created.token, betAction: "bet", amount })).room;
+    } else if (room.phase === "fightPlace" && me.fightCards?.length) {
+      const lane = me.fightLanes.findIndex((card) => !card);
+      room = (await post("/api/place-fight-card", { code: room.code, token: created.token, lane, cardId: me.fightCards[0].id })).room;
+    } else if (room.phase === "fightAbility" && !me.commanderUsed && !me.commanderPassed) {
+      room = (await post("/api/pass-commander", { code: room.code, token: created.token })).room;
+    } else if (room.phase === "fightResults" && !me.resultsAcknowledged) {
+      room = (await post("/api/ack-results", { code: room.code, token: created.token })).room;
+    } else {
+      room = await state(room.code, created.token);
+    }
+  }
+  if (!["turnStart", "chooseAction", "craft", "burn", "fightBet", "fightPlace", "fightAbility", "fightResults", "gameOver"].includes(room.phase)) {
+    throw new Error(`Campaign smoke ended in an unexpected phase: ${room.phase}.`);
+  }
+}
+
 async function run() {
   await testAccounts();
+  await testCampaignMode();
 
   const created = await post("/api/create", { name: "Smoke One" });
   const code = created.room.code;

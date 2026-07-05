@@ -23,7 +23,9 @@ const state = {
   accountName: localStorage.getItem("armswar_account_name") || localStorage.getItem("waygate_name") || "",
   accountPassword: "",
   musicEnabled: localStorage.getItem("armswar_music_enabled") !== "false",
-  showOpponentAbilities: false
+  showOpponentAbilities: false,
+  showCampaign: false,
+  campaignProgress: loadCampaignProgress()
 };
 
 const app = document.getElementById("app");
@@ -44,6 +46,18 @@ function escapeHtml(value) {
     "\"": "&quot;",
     "'": "&#39;"
   })[character]);
+}
+
+function loadCampaignProgress() {
+  try {
+    return JSON.parse(localStorage.getItem("armswar_campaign_progress") || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveCampaignProgress() {
+  localStorage.setItem("armswar_campaign_progress", JSON.stringify(state.campaignProgress));
 }
 
 const MENU_FACTIONS = [
@@ -72,6 +86,53 @@ const MENU_FACTIONS = [
     city: { name: "Constanti, Technology Hub", image: "/assets/factions/bizi-city.jpg" }
   }
 ];
+
+const CAMPAIGN_CHAPTERS = {
+  rumin: {
+    factionName: "Rumin",
+    title: "The Jewel Roads",
+    pitch: "Found Rumie, fight the Senate's debts, open the northern roads, and survive the Ides.",
+    chapters: [
+      { id: "brothers-of-rumie", title: "Brothers of Rumie", opponent: "Remex, Wall Captain", story: "Rumie is still a promise between brothers. Prove the empire begins with discipline, roads, and the first defended market." },
+      { id: "senate-of-debt", title: "Senate of Debt", opponent: "Severan's Coin Engine", story: "The Republic's books are poisoned. Break the machinery of debt before it owns the legions." },
+      { id: "the-gaulic-road", title: "The Gaulic Road", opponent: "Vercan of the Living Wood", story: "Northern forests close around the frontier. Open the road and bring Rumie's standards home." },
+      { id: "ides-of-the-jewel", title: "Ides of the Jewel", opponent: "Brutus, Last Republican", story: "The Jewel has become a crown. Survive the final argument over what Rumie was meant to be." }
+    ]
+  },
+  sheen: {
+    factionName: "Sheen",
+    title: "Roots That Remember",
+    pitch: "Lead the living forest from rebellion through Beli, civil war, and renewal.",
+    chapters: [
+      { id: "iron-roots", title: "Iron Roots", opponent: "Emperor Blackthorn", story: "Iron outposts drink the forest dry. Teach the first rebellion how roots break chains." },
+      { id: "beli-awakens", title: "Beli Awakens", opponent: "Imperial Surveyors", story: "The living city must prove it is more than a refuge. Defend Beli while its roots are still young." },
+      { id: "thorned-crown", title: "Thorned Crown", opponent: "Tang, Crown of Thorns", story: "Reform has become command. Face the crown before the forest forgets how to breathe." },
+      { id: "green-era", title: "Green Era", opponent: "Tide Raiders of Ristus", story: "After civil war, renewal is fragile. Protect the Root Network from raiders chasing soft borders." }
+    ]
+  },
+  frumo: {
+    factionName: "Frumo",
+    title: "The Last Tide",
+    pitch: "Sail from revolution through Polea's command and the uneasy return of the Council.",
+    chapters: [
+      { id: "tax-of-tides", title: "Tax of Tides", opponent: "Royal Tax Fleet", story: "King Ludvik's collectors empty every harbor. Turn grievance into open water." },
+      { id: "silver-shoals", title: "Silver Shoals", opponent: "The Lockwork Fortress", story: "A treasure fortress anchors the old order. Break it before the revolution runs out of powder." },
+      { id: "lord-commander", title: "Lord Commander", opponent: "Council Rivals", story: "Polea saved the republic, and now the republic fears him. Win command without losing the tide." },
+      { id: "last-tide", title: "Last Tide", opponent: "The Green Blockade", story: "The empire's fleets return wounded. One last battle decides whether command or council survives." }
+    ]
+  },
+  bizi: {
+    factionName: "Bizi",
+    title: "The Last Gear",
+    pitch: "Build Constanti, survive riots and schisms, and defend the final engine of memory.",
+    chapters: [
+      { id: "kharons-vision", title: "Kharon's Vision", opponent: "Maxor the Usurper", story: "A city of gears begins with one impossible vision. Defeat the usurper at Iron River." },
+      { id: "riot-of-sparks", title: "Riot of Sparks", opponent: "Factory Rioters", story: "Constanti burns from within. Restore order without letting progress become ash." },
+      { id: "the-schism", title: "The Schism", opponent: "Archon Severus", story: "Faith fractures into competing machines. Hold the center before certainty tears the city apart." },
+      { id: "last-gear", title: "Last Gear", opponent: "The Iron Sultan", story: "The engines fail and the Titans are silent. Defend the last gear so Bizi knowledge survives." }
+    ]
+  }
+};
 
 const MUSIC_THEMES = {
   neutral: {
@@ -397,6 +458,15 @@ function applyRoom(room) {
   if (room.notice && room.noticeId && room.noticeId !== previousNoticeId) {
     showToast(room.notice);
     state.lastNoticeId = room.noticeId;
+  }
+  if (room.phase === "gameOver" && room.campaign && room.winner === room.you) {
+    const cleared = new Set(state.campaignProgress[room.campaign.factionId] || []);
+    if (!cleared.has(room.campaign.chapterId)) {
+      cleared.add(room.campaign.chapterId);
+      state.campaignProgress[room.campaign.factionId] = [...cleared];
+      saveCampaignProgress();
+      showToast(`Campaign cleared: ${room.campaign.title}`);
+    }
   }
   syncMusicTheme();
 }
@@ -737,10 +807,47 @@ function paymentTrailPanel(room) {
   </section>`;
 }
 
+function campaignScreen() {
+  return `<div class="page menu-page campaign-page"><main class="shell menu-shell">
+    <section class="menu-hero campaign-hero">
+      <div class="menu-utility"><button class="secondary" data-action="close-campaign">Main Menu</button>${musicButton()}</div>
+      <div class="menu-kicker">Campaign Mode</div>
+      <h1 class="brand">Faction Campaigns</h1>
+      <p class="subtitle">Choose a faction archive, clear chapters in order, and fight a themed campaign opponent controlled by the game.</p>
+    </section>
+    ${state.error ? `<div class="error">${escapeHtml(state.error)}</div>` : ""}
+    <section class="campaign-grid">
+      ${Object.entries(CAMPAIGN_CHAPTERS).map(([factionId, campaign]) => {
+        const cleared = state.campaignProgress[factionId] || [];
+        return `<article class="campaign-card theme-${factionId}">
+          <div class="campaign-card-top">
+            <span>${escapeHtml(campaign.factionName)}</span>
+            <strong>${cleared.length}/${campaign.chapters.length} cleared</strong>
+          </div>
+          <h2>${escapeHtml(campaign.title)}</h2>
+          <p>${escapeHtml(campaign.pitch)}</p>
+          <div class="campaign-chapter-list">
+            ${campaign.chapters.map((chapter, index) => {
+              const unlocked = index === 0 || cleared.includes(campaign.chapters[index - 1].id);
+              const complete = cleared.includes(chapter.id);
+              return `<div class="campaign-chapter ${unlocked ? "unlocked" : "locked"} ${complete ? "complete" : ""}">
+                <div class="chapter-meta"><span>Chapter ${index + 1}${complete ? " - Cleared" : unlocked ? " - Available" : " - Locked"}</span><strong>${escapeHtml(chapter.title)}</strong></div>
+                <p>${escapeHtml(chapter.story)}</p>
+                <small>Opponent: ${escapeHtml(chapter.opponent)}</small>
+                <button data-action="start-campaign" data-faction-id="${factionId}" data-chapter-id="${chapter.id}" ${unlocked ? "" : "disabled"}>${complete ? "Replay Chapter" : unlocked ? "Begin Chapter" : "Locked"}</button>
+              </div>`;
+            }).join("")}
+          </div>
+        </article>`;
+      }).join("")}
+    </section>
+  </main></div>`;
+}
+
 function menu() {
   return `<div class="page menu-page"><main class="shell menu-shell">
     <section class="menu-hero">
-      <div class="menu-utility">${musicButton()}</div>
+      <div class="menu-utility"><button class="secondary" data-action="open-campaign">Campaign</button>${musicButton()}</div>
       <div class="menu-kicker">Main Menu</div>
       <h1 class="brand">Arms War</h1>
       <p class="subtitle">Create or join a multiplayer table. Faction selection happens after you enter the lobby.</p>
@@ -778,12 +885,13 @@ function playerPanel(player) {
   if (!player) return `<div class="player open-player"><h3>Open Seat</h3><div>Invite a player before starting.</div></div>`;
   const you = state.room.you === player.seat;
   const active = state.room.activePlayer === player.seat && state.room.phase !== "lobby";
+  const connection = player.isBot ? "Campaign AI" : player.connected ? "Connected" : "Disconnected";
   const fightHand = you && player.fightCards?.length
     ? `<div class="mini-hand"><span>Your fight hand</span><div class="mini-cards">${player.fightCards.map((card) => cardView(card)).join("")}</div></div>`
     : "";
   return `<div class="player ${you ? "you" : ""} ${active ? "active-player" : ""} player-${player.factionId || "neutral"}">
     <h3>P${player.seat}: ${escapeHtml(player.name)}${you ? " (You)" : ""}</h3>
-    <div>${escapeHtml(player.faction ? player.faction.name : "No faction")} | ${player.connected ? "Connected" : "Disconnected"}${player.readyToStart ? " | Ready" : ""}${player.fightConceded ? " | Conceded fight" : ""}</div>
+    <div>${escapeHtml(player.faction ? player.faction.name : "No faction")} | ${connection}${player.readyToStart ? " | Ready" : ""}${player.fightConceded ? " | Conceded fight" : ""}</div>
     <div class="metrics">
       <div class="metric"><span>Gold</span><strong>${player.gold}</strong></div>
       <div class="metric"><span>Tech</span><strong>${player.technologies}</strong></div>
@@ -1021,6 +1129,68 @@ function lobbyScreen() {
   </main></div>`;
 }
 
+function phaseLabel(room) {
+  const labels = {
+    action: "Roll and choose an action",
+    payment: "Collect and pay",
+    fightBet: "Set the fight wager",
+    fightPlace: "Place lane cards",
+    fightAbility: "Commander abilities",
+    fightResults: "Review lane results"
+  };
+  return labels[room.phase] || room.phase;
+}
+
+function nextStepText(room) {
+  const me = room.players?.[room.you];
+  if (!me) return "Spectating. Watch the active player and table log.";
+  if (room.phase === "fightBet") {
+    if (me.fightConceded) return "You conceded this fight. Wait for the remaining players.";
+    if (me.agreedBet === room.fight?.currentBet) return `Bet locked at ${room.fight.currentBet}. Waiting for ${listLabels(pendingFightBetters(room).filter((player) => player.seat !== me.seat))}.`;
+    return "Adjust the wager, confirm it, or concede if the price is too high.";
+  }
+  if (room.phase === "fightPlace") {
+    if (me.fightLanes.every(Boolean)) return `Your lanes are placed. Waiting for ${listLabels(pendingFightPlacers(room).filter((player) => player.seat !== me.seat))}.`;
+    return "Select one fight card, then click an open highlighted lane.";
+  }
+  if (room.phase === "fightAbility") {
+    if (me.commanderUsed || me.commanderPassed) return `Commander choice locked. Waiting for ${listLabels(pendingCommanderPlayers(room).filter((player) => player.seat !== me.seat))}.`;
+    return "Use your commander ability on a key lane or pass to keep the reveal moving.";
+  }
+  if (room.phase === "fightResults") {
+    if (me.resultsAcknowledged) return `Results acknowledged. Waiting for ${listLabels(pendingResultPlayers(room).filter((player) => player.seat !== me.seat))}.`;
+    return "Review lane winners, then proceed.";
+  }
+  if (room.activePlayer === me.seat) return "It is your turn. Use the Action panel, then watch the payment trail.";
+  return `Waiting on P${room.activePlayer}.`;
+}
+
+function battleRead(room) {
+  const me = room.players?.[room.you];
+  const activePlayers = joinedPlayers(room).filter((player) => !player.fightConceded).length;
+  return `<section class="battle-read">
+    <div><span>Now</span><strong>${phaseLabel(room)}</strong></div>
+    <div><span>Your gold</span><strong>${me ? me.gold : "-"}</strong></div>
+    <div><span>Fight pot</span><strong>${room.fight?.pot ?? "-"}</strong></div>
+    <div><span>Still fighting</span><strong>${activePlayers || joinedPlayers(room).length}</strong></div>
+    <p>${escapeHtml(nextStepText(room))}</p>
+  </section>`;
+}
+
+function campaignBattlePanel(room) {
+  if (!room.campaign) return "";
+  const won = room.phase === "gameOver" && room.winner === room.you;
+  const lost = room.phase === "gameOver" && room.winner && room.winner !== room.you;
+  return `<section class="campaign-battle-panel">
+    <div>
+      <span>Campaign Chapter</span>
+      <h2>${escapeHtml(room.campaign.title)}</h2>
+      <p>${escapeHtml(room.campaign.briefing)}</p>
+    </div>
+    <strong>${won ? "Cleared" : lost ? "Failed" : `Opponent: ${escapeHtml(room.campaign.opponentName)}`}</strong>
+  </section>`;
+}
+
 function game() {
   const room = state.room;
   const fightActive = ["fightBet", "fightPlace", "fightAbility", "fightResults"].includes(room.phase);
@@ -1064,6 +1234,8 @@ function game() {
       <div class="pill"><span>Roll</span><strong>${room.actionRoll || "-"}</strong></div>
       <div class="pill"><span>Multiplayer</span><strong>${state.streamConnected ? "Live" : "Syncing"}</strong></div>
     </section>
+    ${campaignBattlePanel(room)}
+    ${battleRead(room)}
     ${turnSpotlight}
     ${opponentAbilitiesPanel(room)}
     ${fightActive ? playArea : `<section class="players game-players">${seatNumbers(room).map((seat) => playerPanel(room.players[seat])).join("")}</section>`}
@@ -1072,7 +1244,7 @@ function game() {
 }
 
 function render() {
-  app.innerHTML = state.room ? (state.room.phase === "lobby" ? lobbyScreen() : game()) : menu();
+  app.innerHTML = state.room ? (state.room.phase === "lobby" ? lobbyScreen() : game()) : state.showCampaign ? campaignScreen() : menu();
 }
 
 let selectedFightCardId = "";
@@ -1108,6 +1280,24 @@ app.addEventListener("click", async (event) => {
   if (action === "toggle-opponent-abilities") {
     state.showOpponentAbilities = !state.showOpponentAbilities;
     return render();
+  }
+  if (action === "open-campaign") {
+    state.showCampaign = true;
+    state.error = "";
+    return render();
+  }
+  if (action === "close-campaign") {
+    state.showCampaign = false;
+    state.error = "";
+    return render();
+  }
+  if (action === "start-campaign") {
+    state.showCampaign = false;
+    return act("/api/create-campaign", {
+      name: state.name || state.accountName || "Campaign Player",
+      factionId: target.dataset.factionId,
+      chapterId: target.dataset.chapterId
+    });
   }
   if (action === "create") return act("/api/create", { name: state.name || "Player 1" });
   if (action === "join") return act("/api/join", { code: state.joinCode, token: "", name: state.name || "Player" });

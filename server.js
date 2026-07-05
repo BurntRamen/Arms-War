@@ -16,6 +16,33 @@ const messages = [];
 const roomStreams = new Map();
 const sessions = new Map();
 
+const CAMPAIGN_CHAPTERS = {
+  rumin: [
+    { id: "brothers-of-rumie", title: "Brothers of Rumie", opponentFactionId: "frumo", opponentName: "Remex, Wall Captain", briefing: "Rumie is still a promise between brothers. Prove the empire begins with discipline, roads, and the first defended market." },
+    { id: "senate-of-debt", title: "Senate of Debt", opponentFactionId: "bizi", opponentName: "Severan's Coin Engine", briefing: "The Republic's books are poisoned. Break the machinery of debt before it owns the legions." },
+    { id: "the-gaulic-road", title: "The Gaulic Road", opponentFactionId: "sheen", opponentName: "Vercan of the Living Wood", briefing: "Northern forests close around the frontier. Open the road and bring Rumie's standards home." },
+    { id: "ides-of-the-jewel", title: "Ides of the Jewel", opponentFactionId: "rumin", opponentName: "Brutus, Last Republican", briefing: "The Jewel has become a crown. Survive the final argument over what Rumie was meant to be." }
+  ],
+  sheen: [
+    { id: "iron-roots", title: "Iron Roots", opponentFactionId: "bizi", opponentName: "Emperor Blackthorn", briefing: "Iron outposts drink the forest dry. Teach the first rebellion how roots break chains." },
+    { id: "beli-awakens", title: "Beli Awakens", opponentFactionId: "rumin", opponentName: "Imperial Surveyors", briefing: "The living city must prove it is more than a refuge. Defend Beli while its roots are still young." },
+    { id: "thorned-crown", title: "Thorned Crown", opponentFactionId: "sheen", opponentName: "Tang, Crown of Thorns", briefing: "Reform has become command. Face the crown before the forest forgets how to breathe." },
+    { id: "green-era", title: "Green Era", opponentFactionId: "frumo", opponentName: "Tide Raiders of Ristus", briefing: "After civil war, renewal is fragile. Protect the Root Network from raiders chasing soft borders." }
+  ],
+  frumo: [
+    { id: "tax-of-tides", title: "Tax of Tides", opponentFactionId: "rumin", opponentName: "Royal Tax Fleet", briefing: "King Ludvik's collectors empty every harbor. Turn grievance into open water." },
+    { id: "silver-shoals", title: "Silver Shoals", opponentFactionId: "bizi", opponentName: "The Lockwork Fortress", briefing: "A treasure fortress anchors the old order. Break it before the revolution runs out of powder." },
+    { id: "lord-commander", title: "Lord Commander", opponentFactionId: "frumo", opponentName: "Council Rivals", briefing: "Polea saved the republic, and now the republic fears him. Win command without losing the tide." },
+    { id: "last-tide", title: "Last Tide", opponentFactionId: "sheen", opponentName: "The Green Blockade", briefing: "The empire's fleets return wounded. One last battle decides whether command or council survives." }
+  ],
+  bizi: [
+    { id: "kharons-vision", title: "Kharon's Vision", opponentFactionId: "rumin", opponentName: "Maxor the Usurper", briefing: "A city of gears begins with one impossible vision. Defeat the usurper at Iron River." },
+    { id: "riot-of-sparks", title: "Riot of Sparks", opponentFactionId: "frumo", opponentName: "Factory Rioters", briefing: "Constanti burns from within. Restore order without letting progress become ash." },
+    { id: "the-schism", title: "The Schism", opponentFactionId: "sheen", opponentName: "Archon Severus", briefing: "Faith fractures into competing machines. Hold the center before certainty tears the city apart." },
+    { id: "last-gear", title: "Last Gear", opponentFactionId: "bizi", opponentName: "The Iron Sultan", briefing: "The engines fail and the Titans are silent. Defend the last gear so Bizi knowledge survives." }
+  ]
+};
+
 const FACTIONS = {
   rumin: {
     id: "rumin",
@@ -339,15 +366,16 @@ function createDeck() {
   );
 }
 
-function createPlayer(seat, name) {
+function createPlayer(seat, name, options = {}) {
   const deck = createDeck();
   const playerName = normalizeName(name || `Player ${seat}`);
-  getProfile(playerName);
+  if (!options.isBot) getProfile(playerName);
   return {
     seat,
     name: playerName,
     token: id("tok_"),
-    connected: true,
+    connected: !options.isBot,
+    isBot: Boolean(options.isBot),
     factionId: null,
     accelerationCounters: 0,
     mainDeck: deck.slice(0, 26),
@@ -390,6 +418,38 @@ function createRoom(name) {
     version: 1
   };
   rooms.set(code, room);
+  return room;
+}
+
+function getCampaignChapter(factionId, chapterId) {
+  return (CAMPAIGN_CHAPTERS[factionId] || []).find((chapter) => chapter.id === chapterId) || null;
+}
+
+function createCampaignRoom(name, factionId, chapterId) {
+  if (!FACTIONS[factionId]) throw new Error("Choose a campaign faction.");
+  const chapter = getCampaignChapter(factionId, chapterId);
+  if (!chapter) throw new Error("Choose an available campaign chapter.");
+  const room = createRoom(name || "Campaign Player");
+  const player = room.players[1];
+  player.factionId = factionId;
+  player.readyToStart = true;
+  const bot = createPlayer(2, chapter.opponentName, { isBot: true });
+  bot.factionId = chapter.opponentFactionId;
+  bot.readyToStart = true;
+  room.players[2] = bot;
+  room.campaign = {
+    factionId,
+    chapterId,
+    title: chapter.title,
+    briefing: chapter.briefing,
+    opponentName: chapter.opponentName,
+    opponentFactionId: chapter.opponentFactionId
+  };
+  room.message = `Campaign: ${chapter.title}. ${chapter.briefing}`;
+  room.log.unshift(`Campaign chapter started: ${chapter.title}.`);
+  startGame(room);
+  runCampaignBots(room);
+  rooms.set(room.code, room);
   return room;
 }
 
@@ -1188,6 +1248,97 @@ function selectAction(room, player, action) {
   }
 }
 
+function chooseBotAction(room, bot) {
+  const choices = room.actionChoices || [];
+  if (choices.includes("waygate") && bot.technologies >= 3 && livePlayers(room).every((player) => player.seat === bot.seat || bot.gold > player.gold)) return "waygate";
+  if (choices.includes("fight") && bot.gold > 0 && bot.mainDeck.length >= 3) return "fight";
+  if (choices.includes("event")) return "event";
+  if (choices.includes("craft") && bot.sideDeck.length) return "craft";
+  if (choices.includes("burn") && bot.mainDeck.length) return "burn";
+  return choices[0];
+}
+
+function botBetAmount(room, bot) {
+  const cap = Math.min(room.fight?.maxBet || MAX_FIGHT_BET, bot.gold);
+  const current = room.fight?.currentBet || 1;
+  if (!room.fight?.opened) return Math.max(1, Math.min(cap, 2));
+  if (current < cap && bot.gold >= current + 2 && bot.technologies < 2) return Math.min(cap, current + 1);
+  return Math.min(cap, current);
+}
+
+function runCampaignBots(room) {
+  if (!room?.campaign || room.phase === "gameOver") return;
+  for (let step = 0; step < 80; step += 1) {
+    const botPlayers = livePlayers(room).filter((player) => player.isBot && !player.fightConceded);
+    let acted = false;
+
+    if (room.phase === "turnStart") {
+      const active = room.players[room.activePlayer];
+      if (active?.isBot) {
+        startActionRoll(room);
+        acted = true;
+      }
+    } else if (room.phase === "chooseAction") {
+      const active = room.players[room.activePlayer];
+      if (active?.isBot) {
+        selectAction(room, active, chooseBotAction(room, active));
+        acted = true;
+      }
+    } else if (room.phase === "craft" || room.phase === "burn") {
+      for (const bot of botPlayers) {
+        if (bot.peek?.length) {
+          choosePeekCard(room, bot, bot.peek[0].id);
+          acted = true;
+          break;
+        }
+      }
+    } else if (room.phase === "fightBet") {
+      for (const bot of botPlayers) {
+        if (!room.fight.opened && bot.seat !== room.activePlayer) continue;
+        if (bot.agreedBet === room.fight.currentBet) continue;
+        const amount = botBetAmount(room, bot);
+        if (amount >= room.fight.currentBet && amount <= bot.gold) {
+          betFight(room, bot, amount > room.fight.currentBet ? "raise" : "agree", amount);
+          acted = true;
+          break;
+        }
+        if (room.fight.opened) {
+          betFight(room, bot, "concede");
+          acted = true;
+          break;
+        }
+      }
+    } else if (room.phase === "fightPlace") {
+      for (const bot of botPlayers) {
+        const lane = bot.fightLanes.findIndex((card) => !card);
+        if (lane >= 0 && bot.fightCards.length) {
+          placeFightCard(room, bot, lane, bot.fightCards[0].id);
+          acted = true;
+          break;
+        }
+      }
+    } else if (room.phase === "fightAbility") {
+      for (const bot of botPlayers) {
+        if (!bot.commanderUsed && !bot.commanderPassed) {
+          passCommanderAbility(room, bot);
+          acted = true;
+          break;
+        }
+      }
+    } else if (room.phase === "fightResults") {
+      for (const bot of botPlayers) {
+        if (!bot.resultsAcknowledged) {
+          acknowledgeFightResults(room, bot);
+          acted = true;
+          break;
+        }
+      }
+    }
+
+    if (!acted || room.phase === "gameOver") break;
+  }
+}
+
 function sanitize(room, token) {
   const viewer = getPlayer(room, token);
   return {
@@ -1202,6 +1353,7 @@ function sanitize(room, token) {
     actionChoices: room.actionChoices,
     selectedAction: room.selectedAction,
     fight: room.fight,
+    campaign: room.campaign,
     winner: room.winner,
     notice: room.notice,
     noticeId: room.noticeId || 0,
@@ -1220,6 +1372,7 @@ function sanitize(room, token) {
             seat,
             name: player.name,
             connected: player.connected,
+            isBot: player.isBot,
             factionId: player.factionId,
             faction: getFaction(player),
             accelerationCounters: player.accelerationCounters,
@@ -1343,6 +1496,10 @@ async function handleApi(req, res) {
       const room = createRoom(body.name);
       return sendJson(res, 200, { room: sanitize(room, room.players[1].token), token: room.players[1].token });
     }
+    if (req.url === "/api/create-campaign" && req.method === "POST") {
+      const room = createCampaignRoom(body.name, body.factionId, body.chapterId);
+      return sendJson(res, 200, { room: sanitize(room, room.players[1].token), token: room.players[1].token });
+    }
     if (req.url === "/api/join" && req.method === "POST") {
       const room = rooms.get(String(body.code || "").toUpperCase());
       if (!room) throw new Error("Room not found.");
@@ -1403,6 +1560,7 @@ async function handleApi(req, res) {
     } else {
       return sendJson(res, 404, { error: "Unknown endpoint." });
     }
+    runCampaignBots(room);
     notifyRoom(room);
     return sendJson(res, 200, { room: sanitize(room, body.token) });
   } catch (error) {
