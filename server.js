@@ -43,6 +43,233 @@ const CAMPAIGN_CHAPTERS = {
   ]
 };
 
+const CAMPAIGN_OPPONENT_PROFILES = {
+  "brothers-of-rumie": {
+    commander: {
+      name: "Remex, Wall Captain",
+      image: "/assets/factions/frumo-commander.jpg",
+      text: "Wall Captain: Remex turns the first lane into a shield wall."
+    },
+    city: {
+      name: "First Market Palisade",
+      image: "/assets/factions/frumo-city.jpg",
+      text: "Campaign rule: Remex's lane 1 card gets +2 value."
+    },
+    rule: "Lane 1 gets +2.",
+    effect: "remex"
+  },
+  "senate-of-debt": {
+    commander: {
+      name: "Severan's Coin Engine",
+      image: "/assets/factions/bizi-commander.jpg",
+      text: "Debt Engine: Severan makes gold itself into pressure."
+    },
+    city: {
+      name: "Poisoned Ledger House",
+      image: "/assets/factions/bizi-city.jpg",
+      text: "Campaign rule: Severan's cards get +1 while Severan has 8+ gold, or +2 at 12+ gold."
+    },
+    rule: "+1 with 8+ gold, +2 with 12+ gold.",
+    effect: "severan"
+  },
+  "the-gaulic-road": {
+    commander: {
+      name: "Vercan of the Living Wood",
+      image: "/assets/factions/sheen-commander.jpg",
+      text: "Living Wood: Vercan fights hardest from the dark of the road."
+    },
+    city: {
+      name: "Closing Northern Forest",
+      image: "/assets/factions/sheen-city.jpg",
+      text: "Campaign rule: Vercan's spades and clubs get +2 value."
+    },
+    rule: "Spades and clubs get +2.",
+    effect: "vercan"
+  },
+  "ides-of-the-jewel": {
+    commander: {
+      name: "Brutus, Last Republican",
+      image: "/assets/factions/rumin-commander.jpg",
+      text: "Last Republican: Brutus turns weak lanes into political traps."
+    },
+    city: {
+      name: "The Senate Floor",
+      image: "/assets/factions/rumin-city.jpg",
+      text: "Campaign rule: Brutus's cards with value 7 or less get +3 value."
+    },
+    rule: "Cards with value 7 or less get +3.",
+    effect: "brutus"
+  },
+  "iron-roots": {
+    commander: {
+      name: "Emperor Blackthorn",
+      image: "/assets/factions/bizi-commander.jpg",
+      text: "Iron Roots: Blackthorn rewards force, fire, and red-suited pressure."
+    },
+    city: {
+      name: "Iron Outpost Line",
+      image: "/assets/factions/bizi-city.jpg",
+      text: "Campaign rule: Blackthorn's hearts and diamonds get +2 value."
+    },
+    rule: "Hearts and diamonds get +2.",
+    effect: "blackthorn"
+  },
+  "beli-awakens": {
+    commander: {
+      name: "Imperial Surveyors",
+      image: "/assets/factions/rumin-commander.jpg",
+      text: "Survey Grid: The surveyors are strongest when responding to your turn."
+    },
+    city: {
+      name: "Staked Survey Camp",
+      image: "/assets/factions/rumin-city.jpg",
+      text: "Campaign rule: Surveyor cards get +2 while they do not have initiative."
+    },
+    rule: "+2 while defending.",
+    effect: "surveyors"
+  },
+  "thorned-crown": {
+    commander: {
+      name: "Tang, Crown of Thorns",
+      image: "/assets/factions/sheen-commander.jpg",
+      text: "Thorned Crown: Tang reinforces the strongest lane."
+    },
+    city: {
+      name: "Crownroot Court",
+      image: "/assets/factions/sheen-city.jpg",
+      text: "Campaign rule: Tang's highest-value card gets +2 value."
+    },
+    rule: "Highest card gets +2.",
+    effect: "tang"
+  },
+  "green-era": {
+    commander: {
+      name: "Tide Raiders of Ristus",
+      image: "/assets/factions/frumo-commander.jpg",
+      text: "Raider Wake: Ristus raiders punish predictable sequences."
+    },
+    city: {
+      name: "Soft Border Shoals",
+      image: "/assets/factions/frumo-city.jpg",
+      text: "Campaign rule: Consecutive raider cards get an extra +1 value."
+    },
+    rule: "Consecutive cards get an extra +1.",
+    effect: "raiders"
+  },
+  "tax-of-tides": {
+    commander: {
+      name: "Royal Tax Fleet",
+      image: "/assets/factions/rumin-commander.jpg",
+      text: "Harbor Levy: The tax fleet grows stronger as it hoards gold."
+    },
+    city: {
+      name: "Collector's Harbor",
+      image: "/assets/factions/rumin-city.jpg",
+      text: "Campaign rule: Tax Fleet cards get +1 for every 5 gold the fleet has, up to +3."
+    },
+    rule: "+1 per 5 gold, max +3.",
+    effect: "taxFleet"
+  },
+  "silver-shoals": {
+    commander: {
+      name: "The Lockwork Fortress",
+      image: "/assets/factions/bizi-commander.jpg",
+      text: "Locked Center: The fortress anchors the middle lane."
+    },
+    city: {
+      name: "Silver Shoals Bastion",
+      image: "/assets/factions/bizi-city.jpg",
+      text: "Campaign rule: The fortress's lane 2 card gets +3 value."
+    },
+    rule: "Lane 2 gets +3.",
+    effect: "lockwork"
+  },
+  "lord-commander": {
+    commander: {
+      name: "Council Rivals",
+      image: "/assets/factions/frumo-commander.jpg",
+      text: "Divided Council: The rivals are strongest when every suit has a voice."
+    },
+    city: {
+      name: "Council Chamber of Polea",
+      image: "/assets/factions/frumo-city.jpg",
+      text: "Campaign rule: If the rivals have three different suits, all their cards get +1 value."
+    },
+    rule: "Three suits gives all cards +1.",
+    effect: "council"
+  },
+  "last-tide": {
+    commander: {
+      name: "The Green Blockade",
+      image: "/assets/factions/sheen-commander.jpg",
+      text: "Blockade Line: The blockade guards the far lane."
+    },
+    city: {
+      name: "Root-Closed Harbor",
+      image: "/assets/factions/sheen-city.jpg",
+      text: "Campaign rule: The blockade's lane 3 card gets +2 value."
+    },
+    rule: "Lane 3 gets +2.",
+    effect: "blockade"
+  },
+  "kharons-vision": {
+    commander: {
+      name: "Maxor the Usurper",
+      image: "/assets/factions/rumin-commander.jpg",
+      text: "Usurper's Claim: Maxor leans on court cards and old authority."
+    },
+    city: {
+      name: "Iron River Court",
+      image: "/assets/factions/rumin-city.jpg",
+      text: "Campaign rule: Maxor's Jacks, Queens, Kings, and Aces get +2 value."
+    },
+    rule: "Face cards and Aces get +2.",
+    effect: "maxor"
+  },
+  "riot-of-sparks": {
+    commander: {
+      name: "Factory Rioters",
+      image: "/assets/factions/frumo-commander.jpg",
+      text: "Riot Rhythm: The rioters surge on odd-numbered cards."
+    },
+    city: {
+      name: "Burning Factory Row",
+      image: "/assets/factions/frumo-city.jpg",
+      text: "Campaign rule: Odd-value rioter cards get +2 value."
+    },
+    rule: "Odd-value cards get +2.",
+    effect: "rioters"
+  },
+  "the-schism": {
+    commander: {
+      name: "Archon Severus",
+      image: "/assets/factions/sheen-commander.jpg",
+      text: "Schism Rite: Severus empowers red-suited doctrine."
+    },
+    city: {
+      name: "Schism Cathedral",
+      image: "/assets/factions/sheen-city.jpg",
+      text: "Campaign rule: Severus's hearts and diamonds get +2 value."
+    },
+    rule: "Hearts and diamonds get +2.",
+    effect: "severus"
+  },
+  "last-gear": {
+    commander: {
+      name: "The Iron Sultan",
+      image: "/assets/factions/bizi-commander.jpg",
+      text: "Final Engine: The Sultan converts technology into raw lane strength."
+    },
+    city: {
+      name: "The Last Gear",
+      image: "/assets/factions/bizi-city.jpg",
+      text: "Campaign rule: Sultan cards get +1 value for each technology, up to +3."
+    },
+    rule: "+1 per technology, max +3.",
+    effect: "ironSultan"
+  }
+};
+
 const FACTIONS = {
   rumin: {
     id: "rumin",
@@ -425,16 +652,22 @@ function getCampaignChapter(factionId, chapterId) {
   return (CAMPAIGN_CHAPTERS[factionId] || []).find((chapter) => chapter.id === chapterId) || null;
 }
 
+function campaignOpponentProfile(chapterId) {
+  return CAMPAIGN_OPPONENT_PROFILES[chapterId] || null;
+}
+
 function createCampaignRoom(name, factionId, chapterId) {
   if (!FACTIONS[factionId]) throw new Error("Choose a campaign faction.");
   const chapter = getCampaignChapter(factionId, chapterId);
   if (!chapter) throw new Error("Choose an available campaign chapter.");
+  const opponentProfile = campaignOpponentProfile(chapter.id);
   const room = createRoom(name || "Campaign Player");
   const player = room.players[1];
   player.factionId = factionId;
   player.readyToStart = true;
   const bot = createPlayer(2, chapter.opponentName, { isBot: true });
   bot.factionId = chapter.opponentFactionId;
+  bot.campaignOpponent = opponentProfile;
   bot.readyToStart = true;
   room.players[2] = bot;
   room.campaign = {
@@ -443,9 +676,10 @@ function createCampaignRoom(name, factionId, chapterId) {
     title: chapter.title,
     briefing: chapter.briefing,
     opponentName: chapter.opponentName,
-    opponentFactionId: chapter.opponentFactionId
+    opponentFactionId: chapter.opponentFactionId,
+    opponentProfile
   };
-  room.message = `Campaign: ${chapter.title}. ${chapter.briefing}`;
+  room.message = `Campaign: ${chapter.title}. ${chapter.briefing}${opponentProfile ? ` Opponent rule: ${opponentProfile.rule}` : ""}`;
   room.log.unshift(`Campaign chapter started: ${chapter.title}.`);
   startGame(room);
   runCampaignBots(room);
@@ -504,6 +738,7 @@ function handleRoomStream(req, res) {
 
   const client = { res, token };
   roomStreamSet(code).add(client);
+  if (runCampaignBots(room)) notifyRoom(room);
   sendRoomStream(client, room);
   notifyRoom(room);
 
@@ -560,7 +795,23 @@ function cardLabel(card) {
 }
 
 function getFaction(player) {
-  return FACTIONS[player?.factionId] || null;
+  const faction = FACTIONS[player?.factionId] || null;
+  if (!faction || !player?.campaignOpponent) return faction;
+  return {
+    ...faction,
+    commander: {
+      ...faction.commander,
+      ...player.campaignOpponent.commander
+    },
+    city: {
+      ...faction.city,
+      ...player.campaignOpponent.city
+    },
+    campaignRule: {
+      text: player.campaignOpponent.rule,
+      effect: player.campaignOpponent.effect
+    }
+  };
 }
 
 function log(room, text) {
@@ -1097,6 +1348,80 @@ function finishCommanderWindow(room) {
   }
 }
 
+function campaignOpponentBonus(room, player, lane, cards) {
+  const card = player.fightLanes[lane];
+  const effect = player.campaignOpponent?.effect;
+  if (!effect || !card) return { amount: 0, notes: [] };
+  let amount = 0;
+  const notes = [];
+  const highestOwnValue = Math.max(...cards.map((candidate) => candidate.value));
+  const hasConsecutive = cards.some((other) => other.id !== card.id && Math.abs(other.value - card.value) === 1);
+  const suitIsRed = card.suit === "H" || card.suit === "D";
+  const suitIsBlack = card.suit === "S" || card.suit === "C";
+
+  if (effect === "remex" && lane === 0) {
+    amount += 2;
+    notes.push("Remex +2");
+  } else if (effect === "severan" && player.gold >= 8) {
+    const goldBonus = player.gold >= 12 ? 2 : 1;
+    amount += goldBonus;
+    notes.push(`Debt +${goldBonus}`);
+  } else if (effect === "vercan" && suitIsBlack) {
+    amount += 2;
+    notes.push("Vercan +2");
+  } else if (effect === "brutus" && card.value <= 7) {
+    amount += 3;
+    notes.push("Brutus +3");
+  } else if (effect === "blackthorn" && suitIsRed) {
+    amount += 2;
+    notes.push("Blackthorn +2");
+  } else if (effect === "surveyors" && room.activePlayer !== player.seat) {
+    amount += 2;
+    notes.push("Survey +2");
+  } else if (effect === "tang" && card.value === highestOwnValue) {
+    amount += 2;
+    notes.push("Tang +2");
+  } else if (effect === "raiders" && hasConsecutive) {
+    amount += 1;
+    notes.push("Raid +1");
+  } else if (effect === "taxFleet") {
+    const taxBonus = Math.min(3, Math.floor(player.gold / 5));
+    if (taxBonus > 0) {
+      amount += taxBonus;
+      notes.push(`Tax +${taxBonus}`);
+    }
+  } else if (effect === "lockwork" && lane === 1) {
+    amount += 3;
+    notes.push("Fortress +3");
+  } else if (effect === "council") {
+    const suits = new Set(cards.map((candidate) => candidate.suit));
+    if (cards.length === 3 && suits.size === 3) {
+      amount += 1;
+      notes.push("Council +1");
+    }
+  } else if (effect === "blockade" && lane === 2) {
+    amount += 2;
+    notes.push("Blockade +2");
+  } else if (effect === "maxor" && card.value >= 11) {
+    amount += 2;
+    notes.push("Maxor +2");
+  } else if (effect === "rioters" && card.value % 2 === 1) {
+    amount += 2;
+    notes.push("Riot +2");
+  } else if (effect === "severus" && suitIsRed) {
+    amount += 2;
+    notes.push("Severus +2");
+  } else if (effect === "ironSultan") {
+    const techBonus = Math.min(3, player.technologies);
+    if (techBonus > 0) {
+      amount += techBonus;
+      notes.push(`Sultan +${techBonus}`);
+    }
+  }
+
+  return { amount, notes };
+}
+
 function cityBonus(room, player, lane) {
   const faction = getFaction(player);
   const card = player.fightLanes[lane];
@@ -1133,6 +1458,10 @@ function cityBonus(room, player, lane) {
       notes.push("Constanti +2");
     }
   }
+
+  const campaign = campaignOpponentBonus(room, player, lane, cards);
+  amount += campaign.amount;
+  notes.push(...campaign.notes);
 
   return { amount, notes };
 }
@@ -1267,7 +1596,8 @@ function botBetAmount(room, bot) {
 }
 
 function runCampaignBots(room) {
-  if (!room?.campaign || room.phase === "gameOver") return;
+  if (!room?.campaign || room.phase === "gameOver") return false;
+  let actedAny = false;
   for (let step = 0; step < 80; step += 1) {
     const botPlayers = livePlayers(room).filter((player) => player.isBot && !player.fightConceded);
     let acted = false;
@@ -1335,8 +1665,10 @@ function runCampaignBots(room) {
       }
     }
 
+    if (acted) actedAny = true;
     if (!acted || room.phase === "gameOver") break;
   }
+  return actedAny;
 }
 
 function sanitize(room, token) {
@@ -1516,6 +1848,7 @@ async function handleApi(req, res) {
     if (req.url === "/api/state" && req.method === "POST") {
       const room = rooms.get(String(body.code || "").toUpperCase());
       if (!room) throw new Error("Room not found.");
+      if (runCampaignBots(room)) notifyRoom(room);
       return sendJson(res, 200, { room: sanitize(room, body.token) });
     }
 

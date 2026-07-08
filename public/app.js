@@ -23,6 +23,7 @@ const state = {
   accountName: localStorage.getItem("armswar_account_name") || localStorage.getItem("waygate_name") || "",
   accountPassword: "",
   musicEnabled: localStorage.getItem("armswar_music_enabled") !== "false",
+  soundEnabled: localStorage.getItem("armswar_sound_enabled") !== "false",
   showOpponentAbilities: false,
   showCampaign: false,
   campaignProgress: loadCampaignProgress()
@@ -33,6 +34,7 @@ let audioContext = null;
 let musicTimer = null;
 let musicStep = 0;
 let masterGain = null;
+let soundGain = null;
 let musicAudio = null;
 let activeMusicTheme = "";
 let roomStream = null;
@@ -132,6 +134,25 @@ const CAMPAIGN_CHAPTERS = {
       { id: "last-gear", title: "Last Gear", opponent: "The Iron Sultan", story: "The engines fail and the Titans are silent. Defend the last gear so Bizi knowledge survives." }
     ]
   }
+};
+
+const CAMPAIGN_OPPONENTS = {
+  "brothers-of-rumie": { commander: "Remex, Wall Captain", rule: "Lane 1 gets +2." },
+  "senate-of-debt": { commander: "Severan's Coin Engine", rule: "+1 with 8+ gold, +2 with 12+ gold." },
+  "the-gaulic-road": { commander: "Vercan of the Living Wood", rule: "Spades and clubs get +2." },
+  "ides-of-the-jewel": { commander: "Brutus, Last Republican", rule: "Cards with value 7 or less get +3." },
+  "iron-roots": { commander: "Emperor Blackthorn", rule: "Hearts and diamonds get +2." },
+  "beli-awakens": { commander: "Imperial Surveyors", rule: "+2 while defending." },
+  "thorned-crown": { commander: "Tang, Crown of Thorns", rule: "Highest card gets +2." },
+  "green-era": { commander: "Tide Raiders of Ristus", rule: "Consecutive cards get an extra +1." },
+  "tax-of-tides": { commander: "Royal Tax Fleet", rule: "+1 per 5 gold, max +3." },
+  "silver-shoals": { commander: "The Lockwork Fortress", rule: "Lane 2 gets +3." },
+  "lord-commander": { commander: "Council Rivals", rule: "Three suits gives all cards +1." },
+  "last-tide": { commander: "The Green Blockade", rule: "Lane 3 gets +2." },
+  "kharons-vision": { commander: "Maxor the Usurper", rule: "Face cards and Aces get +2." },
+  "riot-of-sparks": { commander: "Factory Rioters", rule: "Odd-value cards get +2." },
+  "the-schism": { commander: "Archon Severus", rule: "Hearts and diamonds get +2." },
+  "last-gear": { commander: "The Iron Sultan", rule: "+1 per technology, max +3." }
 };
 
 const MUSIC_THEMES = {
@@ -288,6 +309,10 @@ function musicButton() {
   return `<button class="secondary music-button" data-action="toggle-music">${state.musicEnabled ? "Turn Music Off" : "Turn Music On"}</button>`;
 }
 
+function soundButton() {
+  return `<button class="secondary sound-button" data-action="toggle-sound">${state.soundEnabled ? "Sound FX On" : "Sound FX Off"}</button>`;
+}
+
 function factionThemeId() {
   const room = state.room;
   const me = room?.players?.[room.you];
@@ -310,13 +335,23 @@ function remainingReadyPlayers(room, me) {
 
 function playerLabel(player) {
   if (!player) return "Open seat";
-  return `P${player.seat}${player.name ? ` ${escapeHtml(player.name)}` : ""}`;
+  const role = player.isBot ? " (Campaign AI)" : "";
+  return `P${player.seat}${player.name ? ` ${escapeHtml(player.name)}` : ""}${role}`;
 }
 
 function listLabels(players) {
   if (!players.length) return "the other players";
   if (players.length === 1) return playerLabel(players[0]);
   return `${players.slice(0, -1).map(playerLabel).join(", ")} and ${playerLabel(players[players.length - 1])}`;
+}
+
+function aiWaitingText(players, fallback = "the other players") {
+  const pending = players.filter(Boolean);
+  if (!pending.length) return fallback;
+  const aiPlayers = pending.filter((player) => player.isBot);
+  if (aiPlayers.length === pending.length) return `${listLabels(aiPlayers)} is choosing now. This should resolve automatically.`;
+  if (aiPlayers.length) return `${listLabels(pending)} are choosing now. Campaign AI choices resolve automatically.`;
+  return `Waiting for ${listLabels(pending)}.`;
 }
 
 function pendingFightBetters(room, currentBet = room.fight?.currentBet) {
@@ -341,12 +376,15 @@ function ensureAudio() {
     masterGain = audioContext.createGain();
     masterGain.gain.value = 0.38;
     masterGain.connect(audioContext.destination);
+    soundGain = audioContext.createGain();
+    soundGain.gain.value = 0.72;
+    soundGain.connect(audioContext.destination);
   }
   if (audioContext.state === "suspended") audioContext.resume();
 }
 
-function playTone(freq, start, duration, type = "sine", volume = 0.22) {
-  if (!audioContext || !masterGain) return;
+function playTone(freq, start, duration, type = "sine", volume = 0.22, output = masterGain) {
+  if (!audioContext || !output) return;
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
   oscillator.type = type;
@@ -355,9 +393,71 @@ function playTone(freq, start, duration, type = "sine", volume = 0.22) {
   gain.gain.exponentialRampToValueAtTime(volume, start + 0.03);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
   oscillator.connect(gain);
-  gain.connect(masterGain);
+  gain.connect(output);
   oscillator.start(start);
   oscillator.stop(start + duration + 0.04);
+}
+
+function playNoise(start, duration, volume = 0.08, output = soundGain || masterGain) {
+  if (!audioContext || !output) return;
+  const length = Math.max(1, Math.floor(audioContext.sampleRate * duration));
+  const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  const source = audioContext.createBufferSource();
+  const gain = audioContext.createGain();
+  gain.gain.setValueAtTime(volume, start);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  source.buffer = buffer;
+  source.connect(gain);
+  gain.connect(output);
+  source.start(start);
+  source.stop(start + duration + 0.02);
+}
+
+function playSoundEffect(name) {
+  if (!state.soundEnabled) return;
+  try {
+    ensureAudio();
+    if (!audioContext) return;
+    const now = audioContext.currentTime;
+    const output = soundGain || masterGain;
+    const theme = MUSIC_THEMES[factionThemeId()] || MUSIC_THEMES.neutral;
+    const accent = theme.scale?.[4] || 330;
+    if (name === "click") {
+      playTone(880, now, 0.055, "triangle", 0.045, output);
+    } else if (name === "roll") {
+      playTone(220, now, 0.07, "square", 0.055, output);
+      playTone(330, now + 0.07, 0.07, "square", 0.055, output);
+      playTone(495, now + 0.14, 0.09, "square", 0.06, output);
+    } else if (name === "card") {
+      playNoise(now, 0.08, 0.045, output);
+      playTone(520, now + 0.02, 0.06, "triangle", 0.04, output);
+    } else if (name === "bet") {
+      playTone(392, now, 0.08, "triangle", 0.055, output);
+      playTone(587.33, now + 0.08, 0.11, "triangle", 0.06, output);
+    } else if (name === "event") {
+      playTone(accent, now, 0.12, "sawtooth", 0.05, output);
+      playTone(accent * 1.5, now + 0.1, 0.18, "triangle", 0.045, output);
+    } else if (name === "fight") {
+      playTone(130.81, now, 0.16, "sawtooth", 0.07, output);
+      playTone(196, now + 0.08, 0.18, "square", 0.045, output);
+    } else if (name === "result") {
+      playTone(261.63, now, 0.08, "triangle", 0.05, output);
+      playTone(329.63, now + 0.08, 0.08, "triangle", 0.05, output);
+      playTone(392, now + 0.16, 0.16, "triangle", 0.055, output);
+    } else if (name === "win") {
+      playTone(392, now, 0.1, "triangle", 0.06, output);
+      playTone(523.25, now + 0.1, 0.12, "triangle", 0.065, output);
+      playTone(659.25, now + 0.22, 0.22, "triangle", 0.07, output);
+    } else if (name === "loss") {
+      playTone(329.63, now, 0.12, "sine", 0.055, output);
+      playTone(246.94, now + 0.12, 0.18, "sine", 0.05, output);
+    } else if (name === "toast") {
+      playTone(740, now, 0.08, "sine", 0.04, output);
+    }
+  } catch (error) {
+  }
 }
 
 function scheduleMusicBar() {
@@ -448,9 +548,35 @@ function setMusicEnabled(enabled) {
   else stopMusic();
 }
 
+function setSoundEnabled(enabled) {
+  state.soundEnabled = enabled;
+  localStorage.setItem("armswar_sound_enabled", enabled ? "true" : "false");
+  if (enabled) playSoundEffect("click");
+}
+
+function roomSoundEffect(previous, room) {
+  if (!previous || previous.code !== room.code) return room.campaign ? "fight" : "click";
+  if (room.notice && room.noticeId && room.noticeId !== previous.noticeId) {
+    if (room.phase === "gameOver") return room.winner === room.you ? "win" : "loss";
+    if (/event/i.test(room.notice)) return "event";
+    if (/fight|lane|wager|bet|technology/i.test(room.notice)) return "result";
+    return "toast";
+  }
+  if (previous.phase !== room.phase) {
+    if (room.phase === "chooseAction") return "roll";
+    if (room.phase === "fightBet") return "fight";
+    if (room.phase === "fightPlace") return "bet";
+    if (room.phase === "fightAbility") return "card";
+    if (room.phase === "fightResults") return "result";
+    if (room.phase === "gameOver") return room.winner === room.you ? "win" : "loss";
+  }
+  return "";
+}
+
 function applyRoom(room) {
   if (!room) return;
   if (state.room?.code === room.code && room.version && state.room.version && room.version < state.room.version) return;
+  const previousRoom = state.room;
   const previousNoticeId = state.room?.noticeId || state.lastNoticeId;
   state.room = room;
   state.roomCode = room.code;
@@ -466,8 +592,11 @@ function applyRoom(room) {
       state.campaignProgress[room.campaign.factionId] = [...cleared];
       saveCampaignProgress();
       showToast(`Campaign cleared: ${room.campaign.title}`);
+      playSoundEffect("win");
     }
   }
+  const effect = roomSoundEffect(previousRoom, room);
+  if (effect) playSoundEffect(effect);
   syncMusicTheme();
 }
 
@@ -789,6 +918,7 @@ function opponentAbilitiesPanel(room) {
             <img src="${player.faction.city.image}" alt="${player.faction.city.name}" />
             <div><strong>${player.faction.city.name}</strong><p>${player.faction.city.text}</p></div>
           </div>
+          ${player.faction.campaignRule ? `<div class="campaign-rule"><strong>Campaign Rule</strong><p>${escapeHtml(player.faction.campaignRule.text)}</p></div>` : ""}
         </article>`
       )
       .join("")}
@@ -810,7 +940,7 @@ function paymentTrailPanel(room) {
 function campaignScreen() {
   return `<div class="page menu-page campaign-page"><main class="shell menu-shell">
     <section class="menu-hero campaign-hero">
-      <div class="menu-utility"><button class="secondary" data-action="close-campaign">Main Menu</button>${musicButton()}</div>
+      <div class="menu-utility"><button class="secondary" data-action="close-campaign">Main Menu</button>${musicButton()}${soundButton()}</div>
       <div class="menu-kicker">Campaign Mode</div>
       <h1 class="brand">Faction Campaigns</h1>
       <p class="subtitle">Choose a faction archive, clear chapters in order, and fight a themed campaign opponent controlled by the game.</p>
@@ -830,10 +960,12 @@ function campaignScreen() {
             ${campaign.chapters.map((chapter, index) => {
               const unlocked = index === 0 || cleared.includes(campaign.chapters[index - 1].id);
               const complete = cleared.includes(chapter.id);
+              const opponent = CAMPAIGN_OPPONENTS[chapter.id];
               return `<div class="campaign-chapter ${unlocked ? "unlocked" : "locked"} ${complete ? "complete" : ""}">
                 <div class="chapter-meta"><span>Chapter ${index + 1}${complete ? " - Cleared" : unlocked ? " - Available" : " - Locked"}</span><strong>${escapeHtml(chapter.title)}</strong></div>
                 <p>${escapeHtml(chapter.story)}</p>
-                <small>Opponent: ${escapeHtml(chapter.opponent)}</small>
+                <small>Opponent: ${escapeHtml(opponent?.commander || chapter.opponent)}</small>
+                ${opponent ? `<small>Ability: ${escapeHtml(opponent.rule)}</small>` : ""}
                 <button data-action="start-campaign" data-faction-id="${factionId}" data-chapter-id="${chapter.id}" ${unlocked ? "" : "disabled"}>${complete ? "Replay Chapter" : unlocked ? "Begin Chapter" : "Locked"}</button>
               </div>`;
             }).join("")}
@@ -847,7 +979,7 @@ function campaignScreen() {
 function menu() {
   return `<div class="page menu-page"><main class="shell menu-shell">
     <section class="menu-hero">
-      <div class="menu-utility"><button class="secondary" data-action="open-campaign">Campaign</button>${musicButton()}</div>
+      <div class="menu-utility"><button class="secondary" data-action="open-campaign">Campaign</button>${musicButton()}${soundButton()}</div>
       <div class="menu-kicker">Main Menu</div>
       <h1 class="brand">Arms War</h1>
       <p class="subtitle">Create or join a multiplayer table. Faction selection happens after you enter the lobby.</p>
@@ -927,20 +1059,26 @@ function controls() {
     return `${fightStepTracker(room)}${resultSummary}${fightControls(room, me)}`;
   }
   if (room.phase === "turnStart" && room.activePlayer === room.you) return `<button data-action="roll-action">Roll Action Die</button>`;
-  if (room.phase === "turnStart") return `<p>Waiting for Player ${room.activePlayer} to roll.</p>`;
+  if (room.phase === "turnStart") {
+    const active = room.players[room.activePlayer];
+    return `<p>${active?.isBot ? `${playerLabel(active)} is rolling now. This should resolve automatically.` : `Waiting for Player ${room.activePlayer} to roll.`}</p>`;
+  }
   if (room.phase === "chooseAction" && room.activePlayer === room.you) {
     return `<p>Rolled ${room.actionRoll}. Choose one:</p><div class="row">${room.actionChoices
       .map((choice) => `<button data-action="select-action" data-choice="${choice}">${choice}</button>`)
       .join("")}</div>`;
   }
-  if (room.phase === "chooseAction") return `<p>Waiting for Player ${room.activePlayer} to choose ${room.actionChoices.join(" or ")}.</p>`;
+  if (room.phase === "chooseAction") {
+    const active = room.players[room.activePlayer];
+    return `<p>${active?.isBot ? `${playerLabel(active)} is choosing between ${room.actionChoices.join(" and ")}. This should resolve automatically.` : `Waiting for Player ${room.activePlayer} to choose ${room.actionChoices.join(" or ")}.`}</p>`;
+  }
   if ((room.phase === "craft" || room.phase === "burn") && me.peek) {
     return `<p>${room.phase === "craft" ? "Choose one side-deck card to place on top of your main deck." : "Choose one main-deck card to send to the bottom of your side deck."}</p>
       <div class="cards">${me.peek.map((card) => cardView(card, { action: "choose-peek" })).join("")}</div>`;
   }
   if (room.phase === "craft" || room.phase === "burn") {
     const pending = joinedPlayers(room).filter((player) => player.peek);
-    return `<p>Your choice is locked. Waiting for ${listLabels(pending)}.</p>`;
+    return `<p>Your choice is locked. ${aiWaitingText(pending.filter((player) => player.seat !== me.seat))}</p>`;
   }
   if (room.phase === "gameOver") return `<h2>Player ${room.winner} wins.</h2>`;
   return `<p>Waiting for the other players.</p>`;
@@ -952,14 +1090,15 @@ function fightControls(room, me) {
     const currentBet = room.fight.currentBet;
     const activePlayers = joinedPlayers(room).filter((player) => !player.fightConceded);
     if (!room.fight.opened && room.activePlayer !== room.you) {
-      return `<p>Waiting for Player ${room.activePlayer} to open the fight wager.</p>
+      const active = room.players[room.activePlayer];
+      return `<p>${active?.isBot ? `${playerLabel(active)} is opening the fight wager. This should resolve automatically.` : `Waiting for Player ${room.activePlayer} to open the fight wager.`}</p>
         <h3>Your fight cards</h3>
         <div class="cards">${me.fightCards.map((card) => cardView(card)).join("")}</div>`;
     }
     const waitingOnBet = me.agreedBet === currentBet && !activePlayers.every((player) => player.agreedBet === currentBet);
     if (waitingOnBet) {
       const pending = pendingFightBetters(room, currentBet).filter((player) => player.seat !== me.seat);
-      return `<p>You agreed to <strong>${currentBet}</strong> gold. Waiting for ${listLabels(pending)} to confirm or raise.</p>
+      return `<p>You agreed to <strong>${currentBet}</strong> gold. ${aiWaitingText(pending, "Waiting for the remaining players to confirm or raise.")}</p>
         <h3>Your fight cards</h3>
         <div class="cards">${me.fightCards.map((card) => cardView(card)).join("")}</div>`;
     }
@@ -996,7 +1135,7 @@ function fightControls(room, me) {
     const selectedCard = me.fightCards.find((card) => card.id === selectedFightCardId);
     const pending = pendingFightPlacers(room).filter((player) => player.seat !== me.seat);
     const placedAll = me.fightLanes.every(Boolean);
-    if (placedAll) return `<p>Your lanes are set. Waiting for ${listLabels(pending)} to place cards.</p>`;
+    if (placedAll) return `<p>Your lanes are set. ${aiWaitingText(pending, "Waiting for the remaining players to place cards.")}</p>`;
     return `<p>Place one card into each lane. Cards reveal when all lanes are filled.</p>
       ${selectedCard ? `<div class="selected-card-preview"><span>Selected</span>${cardView(selectedCard)}</div>` : ""}
       <div class="cards selectable-cards">${me.fightCards.map((card) => cardView(card, { action: "select-fight-card", extra: card.id === selectedFightCardId ? ' data-selected="true"' : "" })).join("")}</div>
@@ -1005,7 +1144,7 @@ function fightControls(room, me) {
   if (room.phase === "fightAbility") {
     if (me.commanderUsed || me.commanderPassed) {
       const pending = pendingCommanderPlayers(room).filter((player) => player.seat !== me.seat);
-      return `<p>Waiting for ${listLabels(pending)} to use or pass commander abilities.</p>`;
+      return `<p>Your commander choice is locked. ${aiWaitingText(pending, "Waiting for the remaining players to use or pass commander abilities.")}</p>`;
     }
     if (me.factionId === "rumin") {
       return `<p>Kaiser: choose one of your lanes to buff from the top card of your main deck.</p>
@@ -1035,7 +1174,7 @@ function fightControls(room, me) {
   if (room.phase === "fightResults") {
     if (me.resultsAcknowledged) {
       const pending = pendingResultPlayers(room).filter((player) => player.seat !== me.seat);
-      return `<p>Results reviewed. Waiting for ${listLabels(pending)} to proceed.</p>`;
+      return `<p>Results reviewed. ${aiWaitingText(pending, "Waiting for the remaining players to proceed.")}</p>`;
     }
     return `<p>Review who won each lane, then proceed to end the fight.</p>
       <button data-action="ack-results">Proceed</button>`;
@@ -1117,6 +1256,7 @@ function lobbyScreen() {
       </div>
       <div class="topbar-actions">
         ${musicButton()}
+        ${soundButton()}
         <button class="secondary" data-action="toggle-opponent-abilities">${state.showOpponentAbilities ? "Hide" : "Show"} Opponent Abilities</button>
         <button class="secondary" data-action="leave">Leave</button>
       </div>
@@ -1146,22 +1286,24 @@ function nextStepText(room) {
   if (!me) return "Spectating. Watch the active player and table log.";
   if (room.phase === "fightBet") {
     if (me.fightConceded) return "You conceded this fight. Wait for the remaining players.";
-    if (me.agreedBet === room.fight?.currentBet) return `Bet locked at ${room.fight.currentBet}. Waiting for ${listLabels(pendingFightBetters(room).filter((player) => player.seat !== me.seat))}.`;
+    if (me.agreedBet === room.fight?.currentBet) return `Bet locked at ${room.fight.currentBet}. ${aiWaitingText(pendingFightBetters(room).filter((player) => player.seat !== me.seat), "Waiting for the remaining players.")}`;
     return "Adjust the wager, confirm it, or concede if the price is too high.";
   }
   if (room.phase === "fightPlace") {
-    if (me.fightLanes.every(Boolean)) return `Your lanes are placed. Waiting for ${listLabels(pendingFightPlacers(room).filter((player) => player.seat !== me.seat))}.`;
+    if (me.fightLanes.every(Boolean)) return `Your lanes are placed. ${aiWaitingText(pendingFightPlacers(room).filter((player) => player.seat !== me.seat), "Waiting for the remaining players.")}`;
     return "Select one fight card, then click an open highlighted lane.";
   }
   if (room.phase === "fightAbility") {
-    if (me.commanderUsed || me.commanderPassed) return `Commander choice locked. Waiting for ${listLabels(pendingCommanderPlayers(room).filter((player) => player.seat !== me.seat))}.`;
+    if (me.commanderUsed || me.commanderPassed) return `Commander choice locked. ${aiWaitingText(pendingCommanderPlayers(room).filter((player) => player.seat !== me.seat), "Waiting for the remaining players.")}`;
     return "Use your commander ability on a key lane or pass to keep the reveal moving.";
   }
   if (room.phase === "fightResults") {
-    if (me.resultsAcknowledged) return `Results acknowledged. Waiting for ${listLabels(pendingResultPlayers(room).filter((player) => player.seat !== me.seat))}.`;
+    if (me.resultsAcknowledged) return `Results acknowledged. ${aiWaitingText(pendingResultPlayers(room).filter((player) => player.seat !== me.seat), "Waiting for the remaining players.")}`;
     return "Review lane winners, then proceed.";
   }
   if (room.activePlayer === me.seat) return "It is your turn. Use the Action panel, then watch the payment trail.";
+  const active = room.players?.[room.activePlayer];
+  if (active?.isBot) return `${playerLabel(active)} is choosing now. This should resolve automatically.`;
   return `Waiting on P${room.activePlayer}.`;
 }
 
@@ -1181,11 +1323,13 @@ function campaignBattlePanel(room) {
   if (!room.campaign) return "";
   const won = room.phase === "gameOver" && room.winner === room.you;
   const lost = room.phase === "gameOver" && room.winner && room.winner !== room.you;
+  const rule = room.campaign.opponentProfile?.rule;
   return `<section class="campaign-battle-panel">
     <div>
       <span>Campaign Chapter</span>
       <h2>${escapeHtml(room.campaign.title)}</h2>
       <p>${escapeHtml(room.campaign.briefing)}</p>
+      ${rule ? `<p><strong>Opponent ability:</strong> ${escapeHtml(rule)}</p>` : ""}
     </div>
     <strong>${won ? "Cleared" : lost ? "Failed" : `Opponent: ${escapeHtml(room.campaign.opponentName)}`}</strong>
   </section>`;
@@ -1221,6 +1365,7 @@ function game() {
       </div>
       <div class="topbar-actions">
         ${musicButton()}
+        ${soundButton()}
         <button class="secondary" data-action="toggle-opponent-abilities">${state.showOpponentAbilities ? "Hide" : "Show"} Opponent Abilities</button>
         ${room.phase === "lobby" ? "" : roomCodeShare(room)}
         <button class="secondary" data-action="leave">Leave</button>
@@ -1249,6 +1394,17 @@ function render() {
 
 let selectedFightCardId = "";
 
+function actionSoundName(action) {
+  if (action === "roll-action") return "roll";
+  if (action === "select-faction" || action === "choose-peek" || action === "select-fight-card" || action === "place-lane") return "card";
+  if (action === "confirm-bet" || action === "concede" || action === "adjust-bet") return "bet";
+  if (action === "select-action") return "click";
+  if (action === "use-commander" || action === "pass-commander") return "event";
+  if (action === "ack-results") return "result";
+  if (action === "start-campaign" || action === "create" || action === "join" || action === "start") return "fight";
+  return action ? "click" : "";
+}
+
 app.addEventListener("input", (event) => {
   if (event.target.id === "name" || event.target.id === "joinName") {
     state.name = event.target.value;
@@ -1272,9 +1428,18 @@ app.addEventListener("click", async (event) => {
   const target = event.target.closest("[data-action]");
   if (!target) return;
   const action = target.dataset.action;
+  if (action !== "toggle-sound" && action !== "dismiss-toast") {
+    const soundName = actionSoundName(action);
+    if (soundName) playSoundEffect(soundName);
+  }
   if (action === "toggle-music") {
     setMusicEnabled(!state.musicEnabled);
     showToast(state.musicEnabled ? "Music started." : "Music stopped.");
+    return render();
+  }
+  if (action === "toggle-sound") {
+    setSoundEnabled(!state.soundEnabled);
+    showToast(state.soundEnabled ? "Sound effects on." : "Sound effects off.");
     return render();
   }
   if (action === "toggle-opponent-abilities") {
