@@ -3,21 +3,23 @@
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #07111f;
   color: #f8fafc;
-  --aw-bg-dark: #07111f;
-  --aw-bg-mid: #111827;
-  --aw-panel: linear-gradient(180deg, rgba(47, 30, 18, 0.94), rgba(16, 10, 7, 0.96));
-  --aw-panel-soft: linear-gradient(180deg, rgba(64, 42, 25, 0.9), rgba(24, 15, 10, 0.94));
-  --aw-panel-blue: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(8, 13, 23, 0.94));
-  --aw-gold: #cd9a56;
-  --aw-gold-soft: rgba(205, 154, 86, 0.34);
-  --aw-ember: #f59e0b;
-  --aw-blue: #7dd3fc;
+  --aw-bg-dark: #030712;
+  --aw-bg-mid: #0b1628;
+  --aw-panel: linear-gradient(180deg, rgba(10, 24, 38, 0.96), rgba(3, 9, 18, 0.98));
+  --aw-panel-soft: linear-gradient(180deg, rgba(13, 35, 54, 0.92), rgba(5, 14, 28, 0.96));
+  --aw-panel-blue: linear-gradient(180deg, rgba(11, 31, 49, 0.96), rgba(5, 14, 27, 0.96));
+  --aw-gold: #f7c56b;
+  --aw-gold-soft: rgba(247, 197, 107, 0.26);
+  --aw-ember: #fb923c;
+  --aw-blue: #38d6ff;
+  --aw-neon: #22d3ee;
+  --aw-magenta: #a78bfa;
   --aw-ink: #10233b;
   --aw-muted: #dbeafe;
   --aw-subtle: #9fb2c8;
-  --aw-line: rgba(205, 154, 86, 0.34);
-  --aw-shadow: 0 24px 80px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --aw-card-surface: linear-gradient(180deg, #f8ecd5 0%, #e5c9a6 58%, #caa47a 100%);
+  --aw-line: rgba(56, 189, 248, 0.38);
+  --aw-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 38px rgba(34, 211, 238, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --aw-card-surface: linear-gradient(180deg, #f8fbff 0%, #d8eef8 58%, #8fb0c0 100%);
 }
 
 * {
@@ -28,9 +30,11 @@ body {
   margin: 0;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.18), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(180, 83, 9, 0.16), transparent 24%),
-    linear-gradient(135deg, #07111f 0%, #111827 42%, #1f2933 100%);
+    radial-gradient(circle at 16% 10%, rgba(34, 211, 238, 0.24), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(167, 139, 250, 0.16), transparent 26%),
+    repeating-linear-gradient(90deg, rgba(56, 189, 248, 0.08) 0 1px, transparent 1px 70px),
+    repeating-linear-gradient(0deg, rgba(125, 211, 252, 0.06) 0 1px, transparent 1px 54px),
+    linear-gradient(135deg, #030712 0%, #07111f 48%, #0b1628 100%);
 }
 
 button,
@@ -40,26 +44,29 @@ select {
 }
 
 button {
-  border: 0;
+  border: 1px solid rgba(125, 211, 252, 0.68);
   border-radius: 4px;
-  background: linear-gradient(180deg, #f59e0b, #92400e);
-  color: #fff7ed;
+  background: linear-gradient(180deg, #22d3ee, #0e7490);
+  color: #ecfeff;
   padding: 9px 12px;
   font-weight: 700;
   cursor: pointer;
   min-height: 42px;
   touch-action: manipulation;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 24px rgba(0, 0, 0, 0.22);
+  text-shadow: 0 1px 8px rgba(6, 182, 212, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 24px rgba(0, 0, 0, 0.28), 0 0 18px rgba(34, 211, 238, 0.24);
 }
 
 button.secondary {
-  border: 1px solid rgba(125, 211, 252, 0.38);
-  background: linear-gradient(180deg, #1f2937, #0f172a);
-  color: #dbeafe;
+  border: 1px solid rgba(125, 211, 252, 0.44);
+  background: linear-gradient(180deg, rgba(15, 39, 59, 0.94), rgba(5, 14, 28, 0.96));
+  color: #cffafe;
 }
 
 button.danger {
-  background: linear-gradient(180deg, #b91c1c, #64151b);
+  border-color: rgba(248, 113, 113, 0.7);
+  background: linear-gradient(180deg, #ef4444, #7f1d1d);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 18px rgba(248, 113, 113, 0.24);
 }
 
 button:disabled {
@@ -70,11 +77,12 @@ button:disabled {
 input,
 select {
   width: 100%;
-  border: 1px solid rgba(205, 154, 86, 0.42);
+  border: 1px solid rgba(125, 211, 252, 0.42);
   border-radius: 4px;
   padding: 10px 11px;
-  background: rgba(8, 13, 23, 0.82);
+  background: rgba(3, 9, 18, 0.88);
   color: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.06);
 }
 
 select {
@@ -88,18 +96,19 @@ select {
 
 .game-page {
   --theme-bg-a: #07111f;
-  --theme-bg-b: #1f2933;
-  --theme-accent: #cd9a56;
-  --theme-accent-2: #7dd3fc;
-  --theme-line: rgba(205, 154, 86, 0.2);
-  --theme-mark: rgba(125, 211, 252, 0.08);
+  --theme-bg-b: #0f2740;
+  --theme-accent: #38d6ff;
+  --theme-accent-2: #a78bfa;
+  --theme-line: rgba(56, 189, 248, 0.18);
+  --theme-mark: rgba(34, 211, 238, 0.09);
   --theme-shadow: rgba(0, 0, 0, 0.48);
   --theme-soft: rgba(17, 24, 39, 0.9);
   background:
-    linear-gradient(180deg, rgba(7, 17, 31, 0.52), rgba(7, 17, 31, 0.9)),
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--theme-accent) 20%, transparent), transparent 34%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.42), rgba(3, 7, 18, 0.92)),
     linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 86%, #0f172a), var(--theme-bg-b)),
-    repeating-linear-gradient(90deg, transparent 0 54px, var(--theme-line) 54px 56px),
-    repeating-linear-gradient(0deg, transparent 0 42px, var(--theme-mark) 42px 44px);
+    repeating-linear-gradient(90deg, transparent 0 52px, var(--theme-line) 52px 54px),
+    repeating-linear-gradient(0deg, transparent 0 40px, var(--theme-mark) 40px 42px);
   min-height: 100vh;
   overflow: auto;
   padding: 12px;
@@ -108,16 +117,17 @@ select {
 
 .lobby-page {
   --theme-bg-a: #07111f;
-  --theme-bg-b: #1f2933;
-  --theme-accent: #cd9a56;
-  --theme-accent-2: #7dd3fc;
-  --theme-line: rgba(205, 154, 86, 0.2);
-  --theme-mark: rgba(125, 211, 252, 0.08);
+  --theme-bg-b: #0f2740;
+  --theme-accent: #38d6ff;
+  --theme-accent-2: #a78bfa;
+  --theme-line: rgba(56, 189, 248, 0.18);
+  --theme-mark: rgba(34, 211, 238, 0.09);
   --theme-shadow: rgba(0, 0, 0, 0.48);
   min-height: 100vh;
   overflow: auto;
   background:
-    linear-gradient(180deg, rgba(7, 17, 31, 0.44), rgba(7, 17, 31, 0.92)),
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--theme-accent) 18%, transparent), transparent 34%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.42), rgba(3, 7, 18, 0.92)),
     linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-a) 82%, #0f172a), color-mix(in srgb, var(--theme-bg-b) 84%, #111827)),
     repeating-linear-gradient(90deg, transparent 0 94px, var(--theme-line) 94px 96px),
     repeating-linear-gradient(0deg, transparent 0 70px, var(--theme-mark) 70px 72px);
@@ -2076,4 +2086,192 @@ select {
   .topbar-actions > .music-button {
     flex-basis: 100%;
   }
+}
+
+/* High-tech HUD skin inspired by Gauntlet's Babylon match interface. */
+.menu-page,
+.game-page,
+.lobby-page {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--theme-accent, #38d6ff) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 12% 16%, rgba(34, 211, 238, 0.16), transparent 26%),
+    radial-gradient(circle at 86% 10%, rgba(167, 139, 250, 0.14), transparent 26%),
+    repeating-linear-gradient(90deg, rgba(56, 189, 248, 0.075) 0 1px, transparent 1px 70px),
+    repeating-linear-gradient(0deg, rgba(125, 211, 252, 0.055) 0 1px, transparent 1px 52px),
+    linear-gradient(135deg, #030712 0%, #07111f 50%, #0b1628 100%) !important;
+}
+
+.theme-rumin {
+  --theme-bg-a: #220b18;
+  --theme-bg-b: #0c3f64;
+  --theme-accent: #fb7185;
+  --theme-accent-2: #38d6ff;
+  --theme-line: rgba(251, 113, 133, 0.22);
+  --theme-mark: rgba(56, 214, 255, 0.1);
+}
+
+.theme-sheen {
+  --theme-bg-a: #062417;
+  --theme-bg-b: #0e3f34;
+  --theme-accent: #34d399;
+  --theme-accent-2: #67e8f9;
+  --theme-line: rgba(52, 211, 153, 0.2);
+  --theme-mark: rgba(103, 232, 249, 0.1);
+}
+
+.theme-frumo {
+  --theme-bg-a: #051f3c;
+  --theme-bg-b: #075985;
+  --theme-accent: #22d3ee;
+  --theme-accent-2: #93c5fd;
+  --theme-line: rgba(34, 211, 238, 0.22);
+  --theme-mark: rgba(147, 197, 253, 0.1);
+}
+
+.theme-bizi {
+  --theme-bg-a: #19143a;
+  --theme-bg-b: #5b21b6;
+  --theme-accent: #facc15;
+  --theme-accent-2: #38d6ff;
+  --theme-line: rgba(250, 204, 21, 0.18);
+  --theme-mark: rgba(56, 214, 255, 0.09);
+}
+
+.game-shell,
+.lobby-shell,
+.menu-shell,
+.lobby-header,
+.card,
+.panel,
+.menu-card,
+.seat-card,
+.faction-card,
+.campaign-card,
+.campaign-battle-panel,
+.campaign-chapter,
+.ability-card,
+.bet-box,
+.toast,
+.room-share,
+.player,
+.pill,
+.payment-trail,
+.results-summary,
+.battle-read,
+.message-row,
+.account-controls,
+.rulebook-grid div,
+.event-roll {
+  border-color: color-mix(in srgb, var(--theme-accent, #38d6ff) 42%, rgba(125, 211, 252, 0.28)) !important;
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.08), transparent 24%, transparent 76%, rgba(167, 139, 250, 0.06)),
+    linear-gradient(180deg, rgba(10, 24, 38, 0.93), rgba(3, 9, 18, 0.94)) !important;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.35),
+    0 0 28px color-mix(in srgb, var(--theme-accent, #38d6ff) 16%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.game-shell,
+.lobby-shell,
+.menu-shell {
+  backdrop-filter: blur(10px);
+}
+
+.brand,
+.menu-page .brand {
+  color: #f8fafc;
+  text-shadow: 0 0 24px rgba(34, 211, 238, 0.34), 0 12px 34px rgba(0, 0, 0, 0.32);
+}
+
+.menu-kicker,
+.menu-card-label,
+.ability-owner,
+.campaign-rule strong,
+.campaign-chapter strong,
+.campaign-battle-panel > strong,
+.battle-read strong,
+.faction-name,
+.lane-title {
+  color: color-mix(in srgb, var(--theme-accent, #67e8f9) 82%, #ffffff) !important;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--theme-accent, #67e8f9) 34%, transparent);
+}
+
+.menu-hero {
+  border-bottom-color: rgba(56, 189, 248, 0.32);
+}
+
+.primary-menu-card,
+.faction-card.selected {
+  border-top-color: var(--theme-accent, #22d3ee) !important;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.35),
+    0 0 32px color-mix(in srgb, var(--theme-accent, #22d3ee) 24%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09) !important;
+}
+
+.menu-start-steps span,
+.event-roll strong,
+.fight-step.current span,
+.fight-step.done span {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-accent, #22d3ee) 88%, #ffffff), #0e7490) !important;
+  color: #03121d !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--theme-accent, #22d3ee) 32%, transparent);
+}
+
+.play-card {
+  border-color: rgba(8, 47, 73, 0.86);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.16), transparent 36%),
+    var(--aw-card-surface);
+  box-shadow: 0 9px 18px rgba(0, 0, 0, 0.32), inset 0 0 0 2px rgba(255, 255, 255, 0.42);
+}
+
+.play-card.back {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.3), transparent 34%),
+    repeating-linear-gradient(45deg, #0e7490, #0e7490 7px, #0f172a 7px, #0f172a 14px);
+}
+
+.play-card[data-selected="true"],
+.game-page .lane-target,
+.selected-card-preview {
+  border-color: var(--theme-accent, #22d3ee) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent, #22d3ee) 20%, rgba(8, 13, 23, 0.8)), rgba(3, 9, 18, 0.82)) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent, #22d3ee) 26%, transparent), 0 0 24px color-mix(in srgb, var(--theme-accent, #22d3ee) 24%, transparent) !important;
+}
+
+.lane,
+.game-page .lane,
+.empty-slot {
+  border-color: color-mix(in srgb, var(--theme-accent, #38d6ff) 36%, rgba(125, 211, 252, 0.24)) !important;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.06), transparent 45%),
+    repeating-linear-gradient(90deg, rgba(125, 211, 252, 0.08) 0 1px, transparent 1px 18px),
+    rgba(3, 9, 18, 0.58) !important;
+}
+
+.lane-winner,
+.lane-result.won,
+.campaign-chapter.complete {
+  border-color: #34d399 !important;
+  background: linear-gradient(180deg, rgba(20, 83, 45, 0.48), rgba(5, 46, 22, 0.42)) !important;
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.2) !important;
+}
+
+.bet-readout,
+.bet-total,
+.fight-step,
+.battle-read div,
+.battle-read p,
+.menu-strip div {
+  border-color: rgba(125, 211, 252, 0.24) !important;
+  background: rgba(3, 9, 18, 0.68) !important;
+}
+
+.lobby-ready-bar {
+  border-top-color: rgba(34, 211, 238, 0.72) !important;
+  background: rgba(3, 9, 18, 0.96) !important;
+  box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.36), 0 0 22px rgba(34, 211, 238, 0.12);
 }
